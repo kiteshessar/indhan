@@ -1,6 +1,6 @@
 <?php
 session_start();
- print_r($_SESSION);
+ // print_r($_SESSION);
 
 require_once('./include/database.php');
 
@@ -75,7 +75,7 @@ elseif(isset($_REQUEST['action']) && $_REQUEST['action'] == 'verify_otp')
     }
     else
     {
-        echo "Incorrect otp";
+        $message = "Incorrect otp";
     }
 
 }
@@ -119,6 +119,12 @@ elseif(isset($_REQUEST['action']) && $_REQUEST['action'] == 'verify_otp')
                         <div class="row">
                             <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
                             <div class="col-lg-6">
+<?php if(isset($message) && $message != '') { ?>
+                           <div class="alert alert-success" role="alert">
+  <?php echo $message; ?>
+</div>
+                                             <?php } ?>
+                             
                                 <div class="p-5">
                                     <div class="text-center">
                                         <h1 class="h4 text-gray-900 mb-4">Welcome Back!</h1>
@@ -165,5 +171,6 @@ elseif(isset($_REQUEST['action']) && $_REQUEST['action'] == 'verify_otp')
     <script src="js/sb-admin-2.min.js"></script>
 
 </body>
+
 
 </html>
