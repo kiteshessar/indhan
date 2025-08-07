@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+putenv("TZ=IST");
+date_default_timezone_set("Asia/Kolkata");
 
 require_once('./include/database.php');
 
@@ -13,13 +15,413 @@ else
     header("Location: logout.php");
 }
 
+// print_r($_REQUEST);
+
 $SelectQuery = "SELECT * FROM setings ";
+
+           $result = $mysqli->query($SelectQuery);
+
+          
+
+       $row = $result->fetch_assoc();
+
+        $converter = $row['ltr_to_kg'];
+
+        if(isset($_REQUEST['mis_date']) && $_REQUEST['mis_date'] != '')
+        {
+            $today = $_REQUEST['mis_date'];
+
+            $_SESSION['mis_date'] = $_REQUEST['mis_date'];
+        }
+        elseif(isset($_SESSION['mis_date']) && $_SESSION['mis_date'] != '')
+        {
+            $today = $_SESSION['mis_date'];
+        }
+        else
+        {
+
+            $today = date("Y-m-d");
+        }
+
+           
+
+     $SelectQuery = "SELECT * FROM lng_storage_mis where operter_id = '".$_SESSION['userlogin']['id']."' AND DATE(mis_date) = '".$today."'";
 
            $result = $mysqli->query($SelectQuery);
 
        $row = $result->fetch_assoc();
 
-$converter = $row['ltr_to_kg'];
+       $prev_date = date('Y-m-d', strtotime($today . '-1 day'));
+
+
+     $SelectQuery = "SELECT * FROM lng_storage_mis where operter_id = '".$_SESSION['userlogin']['id']."' AND DATE(mis_date) = '".$prev_date."'";
+
+           $result_prev = $mysqli->query($SelectQuery);
+
+       $row_prev = $result_prev->fetch_assoc();
+
+     //  print_r($row_prev);
+
+if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_storage_tank')
+{
+
+    if(isset($row) && count($row) > 0)
+    {
+        $message = "MIS record already exists for this day. ";
+
+        $_REQUEST['action'] = "";
+
+    }else
+    {
+       $InsertQuery = "INSERT INTO   lng_storage_mis SET
+    mis_date = '".$_SESSION['mis_date']."',
+    lng_opening_level_l = '".$_REQUEST['lng_opening_level_l']."',
+    lng_opening_level_kg = '".$_REQUEST['lng_opening_level_kg']."',
+    lng_closing_level_l = '".$_REQUEST['lng_closing_level_l']."',
+    lng_closing_level_kg = '".$_REQUEST['lng_closing_level_kg']."',
+    lng_difference_kg = '".$_REQUEST['lng_difference_kg']."',
+    operter_id = '".$_SESSION['userlogin']['id']."'
+    ";
+
+   // $_SESSION['mis_date'] = $_REQUEST['mis_date'];
+
+    $mysqli->query($InsertQuery);
+
+    $insert_id = $mysqli->insert_id;
+
+    $imgDir = "./uploads/";
+
+    $i=0;
+
+    $upload_arr = array();
+
+    if($_FILES['lng_storage_tank_file']['name'])
+    {
+            $fileName=$_FILES['lng_storage_tank_file']['name'];
+             $tmpFileName = $_FILES['lng_storage_tank_file']['tmp_name'];
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            $image1 = time().'-'.$i.'.'.$fileExt;
+
+            $upload_arr[] = $image1;
+
+			move_uploaded_file($tmpFileName, $imgDir.$image1);
+
+              $UpdateQuery = "UPDATE lng_storage_mis SET 
+    lng_storage_tank_file='".$image1."'
+
+    WHERE
+    id='".$insert_id."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    }
+
+    }
+
+
+
+}
+
+
+if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_dispenser')
+{
+
+
+       $UpdateQuery = " UPDATE  lng_storage_mis SET
+    
+    lng_totalizer_opening_kg = '".$_REQUEST['lng_totalizer_opening_kg']."',
+    lng_totalizer_closing_kg = '".$_REQUEST['lng_totalizer_closing_kg']."',
+    sold_qty_dispenser_kg = '".$_REQUEST['sold_qty_dispenser_kg']."'
+    WHERE
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    $insert_id = $row['id'];
+
+    $imgDir = "./uploads/";
+
+    $i=0;
+
+    $upload_arr = array(); 
+
+    if($_FILES['lng_dispenser_file']['name'])
+    {
+            $fileName=$_FILES['lng_dispenser_file']['name'];
+             $tmpFileName = $_FILES['lng_dispenser_file']['tmp_name'];
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            $image1 = time().'-'.$i.'.'.$fileExt;
+
+            $upload_arr[] = $image1;
+
+			move_uploaded_file($tmpFileName, $imgDir.$image1);
+
+              $UpdateQuery = "UPDATE lng_storage_mis SET 
+    lng_dispenser_file = '".$image1."'
+
+    WHERE
+    id='".$insert_id."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    }
+
+
+
+}
+
+
+
+
+if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'geg')
+{
+
+
+       $UpdateQuery = " UPDATE  lng_storage_mis SET
+    
+     geg_totalizer_opening_kg = '".$_REQUEST['geg_totalizer_opening_kg']."',
+    geg_totalizer_closing_kg = '".$_REQUEST['geg_totalizer_closing_kg']."',
+    geg_consumption_kg = '".$_REQUEST['geg_consumption_kg']."',
+    geg_running_hours = '".$_REQUEST['geg_running_hours']."'
+    WHERE
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    $insert_id = $row['id'];
+
+    $imgDir = "./uploads/";
+
+    $i=0;
+
+    $upload_arr = array(); 
+
+    if($_FILES['geg_file']['name'])
+    {
+          $fileName=$_FILES['geg_file']['name'];
+             $tmpFileName = $_FILES['geg_file']['tmp_name'];
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            $image3 = time().'-'.$i.'.'.$fileExt;
+
+            $upload_arr[] = $image3;
+
+			move_uploaded_file($tmpFileName, $imgDir.$image3);
+
+              $UpdateQuery = "UPDATE lng_storage_mis SET 
+     geg_file='".$image3."'
+
+    WHERE
+    id='".$insert_id."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    }
+
+
+
+}
+
+
+
+
+// unloading_mfm
+
+if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm')
+{
+
+
+       $UpdateQuery = " UPDATE  lng_storage_mis SET
+    
+  unloading_mfm_opening_reading_kg = '".$_REQUEST['unloading_mfm_opening_reading_kg']."',
+    unloading_mfm_closing_reading_kg = '".$_REQUEST['unloading_mfm_closing_reading_kg']."',
+    unloading_mfm_difference_kg = '".$_REQUEST['unloading_mfm_difference_kg']."'
+
+    WHERE
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    $insert_id = $row['id'];
+
+    $imgDir = "./uploads/";
+
+    $i=0;
+
+    $upload_arr = array(); 
+
+    if($_FILES['unloading_mfm_file']['name'])
+    {
+               $fileName=$_FILES['unloading_mfm_file']['name'];
+             $tmpFileName = $_FILES['unloading_mfm_file']['tmp_name'];
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            $image4 = time().'-'.$i.'.'.$fileExt;
+
+            $upload_arr[] = $image4;
+
+			move_uploaded_file($tmpFileName, $imgDir.$image4);
+
+              $UpdateQuery = "UPDATE lng_storage_mis SET 
+     unloading_mfm_file='".$image4."'
+
+    WHERE
+    id='".$insert_id."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    }
+
+
+
+}
+
+
+
+if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm')
+{
+
+
+       $UpdateQuery = " UPDATE  lng_storage_mis SET
+    
+  unloading_mfm_opening_reading_kg = '".$_REQUEST['unloading_mfm_opening_reading_kg']."',
+    unloading_mfm_closing_reading_kg = '".$_REQUEST['unloading_mfm_closing_reading_kg']."',
+    unloading_mfm_difference_kg = '".$_REQUEST['unloading_mfm_difference_kg']."'
+
+    WHERE
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    $insert_id = $row['id'];
+
+    $imgDir = "./uploads/";
+
+    $i=0;
+
+    $upload_arr = array(); 
+
+    if($_FILES['unloading_mfm_file']['name'])
+    {
+               $fileName=$_FILES['unloading_mfm_file']['name'];
+             $tmpFileName = $_FILES['unloading_mfm_file']['tmp_name'];
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            $image4 = time().'-'.$i.'.'.$fileExt;
+
+            $upload_arr[] = $image4;
+
+			move_uploaded_file($tmpFileName, $imgDir.$image4);
+
+              $UpdateQuery = "UPDATE lng_storage_mis SET 
+     unloading_mfm_file='".$image4."'
+
+    WHERE
+    id='".$insert_id."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    }
+
+
+
+}
+
+// grid_power_meter
+
+
+if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'grid_power_meter')
+{
+
+
+       $UpdateQuery = " UPDATE  lng_storage_mis SET
+    
+ grid_power_opening_kwh = '".$_REQUEST['grid_power_opening_kwh']."',
+    grid_power_meter_closing_kwh = '".$_REQUEST['grid_power_meter_closing_kwh']."',
+    grid_power_meter_difference_kwh = '".$_REQUEST['grid_power_meter_difference_kwh']."',
+    solar_power_opening_kwh = '".$_REQUEST['solar_power_opening_kwh']."',
+    solar_power_meter_closing_kwh = '".$_REQUEST['solar_power_meter_closing_kwh']."',
+    solar_power_meter_difference_kwh = '".$_REQUEST['solar_power_meter_difference_kwh']."'
+
+    WHERE
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    $insert_id = $row['id'];
+
+    $imgDir = "./uploads/";
+
+    $i=0;
+
+    $upload_arr = array(); 
+
+    if($_FILES['grid_power_meter_file']['name'])
+    {
+               $fileName=$_FILES['grid_power_meter_file']['name'];
+             $tmpFileName = $_FILES['grid_power_meter_file']['tmp_name'];
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            $image4 = time().'-'.$i.'.'.$fileExt;
+
+            $upload_arr[] = $image4;
+
+            $i++;
+
+			move_uploaded_file($tmpFileName, $imgDir.$image4);
+
+            $fileName=$_FILES['solar_power_meter_file']['name'];
+             $tmpFileName = $_FILES['solar_power_meter_file']['tmp_name'];
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            $image5 = time().'-'.$i.'.'.$fileExt;
+
+            $upload_arr[] = $image5;
+
+			move_uploaded_file($tmpFileName, $imgDir.$image5);
+
+              $UpdateQuery = "UPDATE lng_storage_mis SET 
+     grid_power_meter_file='".$image4."',
+     solar_power_meter_file='".$image5."'
+
+    WHERE
+    id='".$insert_id."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    }
+
+
+
+}
+
+// Update
+if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Update')
+{
+
+           $UpdateQuery = " UPDATE  lng_storage_mis SET
+    is_submitted = '1',
+  remarks = '".$_REQUEST['remarks']."'
+    WHERE
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+}
 
 if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
 {
@@ -168,6 +570,34 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
 
 }
 
+
+
+
+    if(isset($_REQUEST['mis_date']) && $_REQUEST['mis_date'] != '')
+        {
+            $today = $_REQUEST['mis_date'];
+
+             $_SESSION['mis_date'] = $_REQUEST['mis_date'];
+        }
+        elseif(isset($_SESSION['mis_date']) && $_SESSION['mis_date'] != '')
+        {
+            $today = $_SESSION['mis_date'];
+        }
+        else
+        {
+
+            $today = date("Y-m-d");
+        }
+
+      $SelectQuery = "SELECT * FROM lng_storage_mis where operter_id = '".$_SESSION['userlogin']['id']."' AND DATE(mis_date) = '".$today."'";
+
+           $result = $mysqli->query($SelectQuery);
+
+       $row = $result->fetch_assoc();
+
+       //print_r($row);
+
+
 ?><!DOCTYPE html>
 <html lang="en">
 
@@ -179,7 +609,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SB Admin 2 - Tables</title>
+    <title>Greenline Admin </title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -204,11 +634,11 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-laugh-wink"></i>
                 </div>
-                <div class="sidebar-brand-text mx-3">SB Admin <sup>2</sup></div>
+                <div class="sidebar-brand-text mx-3">Greenline Admin</div>
             </a>
 
             <!-- Divider -->
@@ -269,12 +699,14 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                     <form
                         class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
                         <div class="input-group">
-                            <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
+                            <!-- <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
                                 aria-label="Search" aria-describedby="basic-addon2">
+-->
                             <div class="input-group-append">
-                                <button class="btn btn-primary" type="button">
+                               <!-- <button class="btn btn-primary" type="button">
                                     <i class="fas fa-search fa-sm"></i>
                                 </button>
+-->
                             </div>
                         </div>
                     </form>
@@ -293,13 +725,15 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                                 aria-labelledby="searchDropdown">
                                 <form class="form-inline mr-auto w-100 navbar-search">
                                     <div class="input-group">
-                                        <input type="text" class="form-control bg-light border-0 small"
+                                        <!-- <input type="text" class="form-control bg-light border-0 small"
                                             placeholder="Search for..." aria-label="Search"
                                             aria-describedby="basic-addon2">
+-->
                                         <div class="input-group-append">
-                                            <button class="btn btn-primary" type="button">
+                                           <!-- <button class="btn btn-primary" type="button">
                                                 <i class="fas fa-search fa-sm"></i>
                                             </button>
+-->
                                         </div>
                                     </div>
                                 </form>
@@ -320,7 +754,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                                 <h6 class="dropdown-header">
                                     Alerts Center
                                 </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
+                               <!-- <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="mr-3">
                                         <div class="icon-circle bg-primary">
                                             <i class="fas fa-file-alt text-white"></i>
@@ -354,6 +788,8 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                                     </div>
                                 </a>
                                 <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+
+-->
                             </div>
                         </li>
 
@@ -371,7 +807,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                                 <h6 class="dropdown-header">
                                     Message Center
                                 </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
+                              <!--  <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="dropdown-list-image mr-3">
                                         <img class="rounded-circle" src="img/undraw_profile_1.svg"
                                             alt="...">
@@ -419,7 +855,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                                         <div class="small text-gray-500">Chicken the Dog · 2w</div>
                                     </div>
                                 </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
+                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a> -->
                             </div>
                         </li>
 
@@ -436,7 +872,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="#">
+                               <!-- <a class="dropdown-item" href="#">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Profile
                                 </a>
@@ -448,6 +884,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                                     <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Activity Log
                                 </a>
+-->
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="logout.php" >
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
@@ -465,16 +902,16 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">MIS</h1>
-                    <p class="mb-4">MIS</p>
+                    <h1 class="h3 mb-2 text-gray-800">MIS - <?php echo $_SESSION['userlogin']['name']; ?></h1>
+                    <p class="mb-4">MIS - <?php echo $_SESSION['userlogin']['name']; ?></p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">MIS</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">MIS - <?php echo $_SESSION['userlogin']['name']; ?></h6>
                         </div>
                         <div class="card-body">
-                              <form
+                              <form name="mis_date_form" id="mis_date_form"
             action=""
             method="POST"
             enctype="multipart/form-data" 
@@ -496,10 +933,18 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                             <div class="form-group"  >
       <label for="input1">Date*</label>
       <div class="col-sm-4">
-      <input type="date" required class="form-control" id="mis_date" name="mis_date">
+      <input type="date" required class="form-control" id="mis_date" value="<?php if(isset($_SESSION['mis_date']) && $_SESSION['mis_date'] != '') { echo $_SESSION['mis_date']; } ?>" name="mis_date">
 </div>
     </div>
-</div>                   
+</div> </form>
+
+<form
+            action=""
+            method="POST"
+            enctype="multipart/form-data" 
+        >
+
+
                             <!-- <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#formSection1" aria-expanded="false" aria-controls="formSection1">
 LNG Storage Tank
 </button> -->
@@ -508,41 +953,53 @@ LNG Storage Tank
     <div class="card-body">LNG Storage Tank</div>
   </div>
 
-<div class="collapse" id="formSection1">
+<div class="collapse <?php if(isset($_REQUEST['mis_date']) && $_REQUEST['mis_date'] != '' || (isset($row['is_submitted']) && $row['is_submitted'] == '1' ) ) { echo "show"; } ?>" id="formSection1">
   <div class="card card-body">
     <!-- Form elements for section 1 go here -->
     <div class="form-group">
       <label for="input1">LNG Storage Tank Opening Level (L):</label>
-      <input type="text"  required  onchange="lng_litre_to_kg_opening();" class="form-control" id="lng_opening_level_l" name="lng_opening_level_l">
+      <input type="text"  required  onchange="lng_litre_to_kg_opening();" value="<?php  if(isset($row['lng_opening_level_l']) && $row['lng_opening_level_l']) {  echo $row['lng_opening_level_l']; }elseif(isset($row_prev['lng_closing_level_l']) && $row_prev['lng_closing_level_l'] != '') { echo $row_prev['lng_closing_level_l']; } ?>" class="form-control" id="lng_opening_level_l" name="lng_opening_level_l">
     </div>
     <div class="form-group">
       <label for="input2">LNG Storage Tank Opening Level (kg)</label>
-      <input type="text"  readonly class="form-control" id="lng_opening_level_kg"  onchange="lng_storage_tank_difference_kg()" name="lng_opening_level_kg">
+      <input type="text"  readonly class="form-control"  value="<?php  if(isset($row['lng_opening_level_kg']) && $row['lng_opening_level_kg']) {  echo $row['lng_opening_level_kg']; } elseif(isset($row_prev['lng_closing_level_kg']) && $row_prev['lng_closing_level_kg'] != '') { echo $row_prev['lng_closing_level_kg']; } ?>"  id="lng_opening_level_kg"  onchange="lng_storage_tank_difference_kg()" name="lng_opening_level_kg">
     </div>
 
      <div class="form-group">
       <label for="input1">LNG Storage Tank Closing Level (L):</label>
-      <input type="text" onchange="lng_litre_to_kg_closing();" required class="form-control" id="lng_closing_level_l" name="lng_closing_level_l">
+      <input type="text" onchange="lng_litre_to_kg_closing();" required class="form-control"  value="<?php  if(isset($row['lng_closing_level_l']) && $row['lng_closing_level_l']) {  echo $row['lng_closing_level_l']; } ?>"  id="lng_closing_level_l" name="lng_closing_level_l">
     </div>
     <div class="form-group">
       <label for="input2">LNG Storage Tank Closing Level (Kg)*</label>
-      <input type="text"  readonly class="form-control" id="lng_closing_level_kg"  onchange="lng_storage_tank_difference_kg()" name="lng_closing_level_kg">
+      <input type="text"  readonly class="form-control"  value="<?php  if(isset($row['lng_closing_level_kg']) && $row['lng_closing_level_kg']) {  echo $row['lng_closing_level_kg']; } ?>"  id="lng_closing_level_kg"  onchange="lng_storage_tank_difference_kg()" name="lng_closing_level_kg">
     </div>
 
     <div class="form-group">
       <label for="input2">LNG Storage Tank Difference (kg) *</label>
-      <input type="text" required class="form-control" id="lng_difference_kg" readonly name="lng_difference_kg">
+      <input type="text" required class="form-control" value="<?php  if(isset($row['lng_difference_kg']) && $row['lng_difference_kg']) {  echo $row['lng_difference_kg']; } ?>" id="lng_difference_kg" readonly name="lng_difference_kg">
     </div>
-
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+else { ?>
     <div class="form-group"  >
 
              <label for="lng_storage_tank_file" class="form-label"
                 >LNG Storage Tank File</label>
             <input
-                type="file" readonly name="lng_storage_tank_file" id="lng_storage_tank_file"  onchange="lng_storage_tank_difference_kg()" class="form-control" />
+                type="file" required  name="lng_storage_tank_file" id="lng_storage_tank_file"  onchange="lng_storage_tank_difference_kg()" class="form-control" />
 
             </div>
 
+            
+
+<div class="form-group">
+      <label  for="input1"></label>
+      <div class="col-sm-2">
+      <input type="hidden" name="action" id="action" value="lng_storage_tank">
+      <input type="submit" class="form-control btn btn-primary" id="Submit" name="Submit"></textarea>
+    </div>
+    </div>
+<?php } ?>
+                        </form>
   </div>
 </div><br>
 
@@ -554,23 +1011,31 @@ LNG Storage Tank
     <div class="card-body">LNG Dispenser</div>
   </div>
 
-<div class="collapse" id="formSection2">
+<div class="collapse <?php if((isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_storage_tank') || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+{  echo "show"; } ?>" id="formSection2">
   <div class="card card-body">
     <!-- Form elements for section 2 go here -->
+
+     <form
+            action=""
+            method="POST"
+            enctype="multipart/form-data" 
+        >
     <div class="form-group">
       <label for="input1">LNG Dispenser Totalizer Opening (kg) *</label>
-      <input type="text" required onchange="lng_dispenser_sold_quantity_kg();" class="form-control" id="lng_totalizer_opening_kg" name="lng_totalizer_opening_kg">
+      <input type="text" required onchange="lng_dispenser_sold_quantity_kg();" class="form-control" id="lng_totalizer_opening_kg" name="lng_totalizer_opening_kg" value="<?php if(isset($row['lng_totalizer_opening_kg']) && $row['lng_totalizer_opening_kg'] != '' ) { echo $row['lng_totalizer_opening_kg']; } elseif(isset($row_prev['lng_totalizer_closing_kg']) && $row_prev['lng_totalizer_closing_kg'] != '') { echo $row_prev['lng_totalizer_closing_kg']; } ?>">
     </div>
     <div class="form-group">
       <label for="input2">LNG Dispenser Totalizer Closing (kg) *</label>
-      <input type="text" required onchange="lng_dispenser_sold_quantity_kg();" class="form-control" id="lng_totalizer_closing_kg" name="lng_totalizer_closing_kg">
+      <input type="text" required onchange="lng_dispenser_sold_quantity_kg();" class="form-control" id="lng_totalizer_closing_kg" name="lng_totalizer_closing_kg" value="<?php if(isset($row['lng_totalizer_closing_kg']) && $row['lng_totalizer_closing_kg'] != '' ) { echo $row['lng_totalizer_closing_kg']; } ?>" >
     </div>
 
      <div class="form-group">
       <label for="input1">Sold Qty by Dispenser (kg) *:</label>
-      <input type="text" required readonly class="form-control" id="sold_qty_dispenser_kg" name="sold_qty_dispenser_kg">
+      <input type="text" required readonly class="form-control" id="sold_qty_dispenser_kg" name="sold_qty_dispenser_kg" value="<?php if(isset($row['sold_qty_dispenser_kg']) && $row['sold_qty_dispenser_kg'] != '' ) { echo $row['sold_qty_dispenser_kg']; } ?>">
     </div>
-
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+else { ?>
        <div class="form-group"  >
 
              <label for="lng_storage_tank_file" class="form-label"
@@ -579,6 +1044,17 @@ LNG Storage Tank
                 type="file" required name="lng_dispenser_file"  onchange="lng_dispenser_sold_quantity_kg();"  id="lng_dispenser_file" class="form-control" />
 
             </div>
+
+             <div class="form-group">
+      <label  for="input1"></label>
+      <div class="col-sm-2">
+      <input type="hidden" name="action" id="action" value="lng_dispenser">
+      <input type="submit" class="form-control  btn btn-primary" id="Submit" name="Submit"></textarea>
+    </div>
+    </div>
+<?php } ?>
+
+                        </form>
 
   </div>
 </div>
@@ -591,28 +1067,36 @@ LNG Storage Tank
     <div class="card-body">GEG</div>
   </div>
 
-<div class="collapse" id="formSection3">
+<div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_dispenser' || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+{ echo "show"; } ?>" id="formSection3">
   <div class="card card-body">
     <!-- Form elements for section 2 go here -->
+
+     <form
+            action=""
+            method="POST"
+            enctype="multipart/form-data" 
+        >
     <div class="form-group">
       <label for="input1">GEG Totalizer Opening (kg)*</label>
-      <input type="text" required onchange="lng_geg_consumption_kg();" class="form-control" id="geg_totalizer_opening_kg" name="geg_totalizer_opening_kg">
+      <input type="text" required onchange="lng_geg_consumption_kg();" class="form-control" id="geg_totalizer_opening_kg" name="geg_totalizer_opening_kg"   value="<?php if(isset($row['geg_totalizer_opening_kg']) && $row['geg_totalizer_opening_kg'] != '' ) { echo $row['geg_totalizer_opening_kg']; } elseif(isset($row_prev['geg_totalizer_closing_kg']) && $row_prev['geg_totalizer_closing_kg'] != '') { echo $row_prev['geg_totalizer_closing_kg']; } ?>" >
     </div>
     <div class="form-group">
       <label for="input2">GEG Totalizer Closing (kg)*</label>
-      <input type="text" required  onchange="lng_geg_consumption_kg();"  class="form-control" id="geg_totalizer_closing_kg" name="geg_totalizer_closing_kg">
+      <input type="text" required  onchange="lng_geg_consumption_kg();"  class="form-control" id="geg_totalizer_closing_kg" name="geg_totalizer_closing_kg"   value="<?php if(isset($row['geg_totalizer_closing_kg']) && $row['geg_totalizer_closing_kg'] != '' ) { echo $row['geg_totalizer_closing_kg']; } ?>" >
     </div>
 
      <div class="form-group">
       <label for="input1">GEG Consumption (kg)*</label>
-      <input type="text" required readonly class="form-control" id="geg_consumption_kg" name="geg_consumption_kg">
+      <input type="text" required readonly class="form-control" id="geg_consumption_kg" name="geg_consumption_kg"   value="<?php if(isset($row['geg_consumption_kg']) && $row['geg_consumption_kg'] != '' ) { echo $row['geg_consumption_kg']; } ?>" >
     </div>
 
     <div class="form-group">
       <label for="input1">GEG Running Hours *</label>
-      <input type="text"  required class="form-control" id="geg_running_hours" name="geg_running_hours">
+      <input type="text"  required class="form-control" id="geg_running_hours" name="geg_running_hours"   value="<?php if(isset($row['geg_running_hours']) && $row['geg_running_hours'] != '' ) { echo $row['geg_running_hours']; } ?>" >
     </div>
-
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+else { ?>
            <div class="form-group"  >
 
              <label for="lng_storage_tank_file" class="form-label"
@@ -621,6 +1105,16 @@ LNG Storage Tank
                 type="file" onchange="lng_geg_consumption_kg();" required name="geg_file" id="geg_file" class="form-control" />
 
             </div>
+
+ <div class="form-group">
+      <label  for="input1"></label>
+      <div class="col-sm-2">
+      <input type="hidden" name="action" id="action" value="geg">
+      <input type="submit" class="form-control  btn btn-primary" id="Submit" name="Submit"></textarea>
+    </div>
+    </div>
+    <?php } ?>
+                        </form>
 
   </div>
 </div>
@@ -634,22 +1128,32 @@ LNG Storage Tank
   </div>
 
 
-<div class="collapse" id="formSection4">
+<div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'geg' || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+{ ?> show <?php } ?>" id="formSection4">
   <div class="card card-body">
+
+   <form
+            action=""
+            method="POST"
+            enctype="multipart/form-data" 
+        >
     <!-- Form elements for section 2 go here -->
     <div class="form-group">
       <label for="input1">Unloading MFM Opening Reading (kg) *</label>
-      <input type="text" required onchange="lng_unloading_mfm_difference_kg();" class="form-control" id="unloading_mfm_opening_reading_kg" name="unloading_mfm_opening_reading_kg">
+      <input type="text" required onchange="lng_unloading_mfm_difference_kg();" class="form-control" id="unloading_mfm_opening_reading_kg" name="unloading_mfm_opening_reading_kg"  value="<?php if(isset($row['unloading_mfm_opening_reading_kg']) && $row['unloading_mfm_opening_reading_kg'] != '' ) { echo $row['unloading_mfm_opening_reading_kg']; } elseif(isset($row_prev['unloading_mfm_closing_reading_kg']) && $row_prev['unloading_mfm_closing_reading_kg'] != '') { echo $row_prev['unloading_mfm_closing_reading_kg']; } ?>"  >
     </div>
     <div class="form-group">
       <label for="input2">Unloading MFM Closing Reading (kg)*</label>
-      <input type="text" required  onchange="lng_unloading_mfm_difference_kg();"  class="form-control" id="unloading_mfm_closing_reading_kg" name="unloading_mfm_closing_reading_kg">
+      <input type="text" required  onchange="lng_unloading_mfm_difference_kg();"  class="form-control" id="unloading_mfm_closing_reading_kg" name="unloading_mfm_closing_reading_kg"  value="<?php if(isset($row['unloading_mfm_closing_reading_kg']) && $row['unloading_mfm_closing_reading_kg'] != '' ) { echo $row['unloading_mfm_closing_reading_kg']; } ?>" >
     </div>
 
      <div class="form-group">
       <label for="input1">Unloading MFM Difference (kg)*</label>
-      <input type="text" required readonly class="form-control" id="unloading_mfm_difference_kg" name="unloading_mfm_difference_kg">
+      <input type="text" required readonly class="form-control" id="unloading_mfm_difference_kg" name="unloading_mfm_difference_kg"  value="<?php if(isset($row['unloading_mfm_difference_kg']) && $row['unloading_mfm_difference_kg'] != '' ) { echo $row['unloading_mfm_difference_kg']; } ?>">
     </div>
+
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+else { ?>
 
     <div class="form-group"  >
 
@@ -659,6 +1163,18 @@ LNG Storage Tank
                 type="file" onchange="lng_unloading_mfm_difference_kg();" required name="unloading_mfm_file" id="unloading_mfm_file" class="form-control" />
 
             </div>
+
+             <div class="form-group">
+      <label  for="input1"></label>
+      <div class="col-sm-2">
+      <input type="hidden" name="action" id="action" value="unloading_mfm">
+      <input type="submit" class="form-control  btn btn-primary" id="Submit" name="Submit"></textarea>
+    </div>
+    </div>
+
+    <?php } ?>
+
+                        </form>
 
   </div>
 </div>
@@ -671,47 +1187,65 @@ LNG Storage Tank
   </div>
 
 
-<div class="collapse" id="formSection5">
+<div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm' || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+{ echo "show";  }  ?>" id="formSection5">
   <div class="card card-body">
     <!-- Form elements for section 2 go here -->
+
+     <form
+            action=""
+            method="POST"
+            enctype="multipart/form-data" 
+        >
     <div class="form-group">
 
 
         <div class="form-group">
       <label for="input1">Solar Power Meter Opening (KWH)*</label>
-      <input type="text" required onchange="solar_power_meter_difference();" class="form-control" id="solar_power_opening_kwh" name="solar_power_opening_kwh">
+      <input type="text" required onchange="solar_power_meter_difference();" class="form-control" id="solar_power_opening_kwh" name="solar_power_opening_kwh"   value="<?php if(isset($row['solar_power_opening_kwh']) && $row['solar_power_opening_kwh'] != '' ) { echo $row['solar_power_opening_kwh']; } elseif(isset($row_prev['solar_power_meter_closing_kwh']) && $row_prev['solar_power_meter_closing_kwh'] != '') { echo $row_prev['solar_power_meter_closing_kwh']; } ?>">
     </div>
 
     <div class="form-group">
       <label for="input1">Solar Power Meter Closing (KWH)*</label>
-      <input type="text" required onchange="solar_power_meter_difference();" class="form-control" id="solar_power_meter_closing_kwh" name="solar_power_meter_closing_kwh">
+      <input type="text" required onchange="solar_power_meter_difference();" class="form-control" id="solar_power_meter_closing_kwh" name="solar_power_meter_closing_kwh"  value="<?php if(isset($row['solar_power_meter_closing_kwh']) && $row['solar_power_meter_closing_kwh'] != '' ) { echo $row['solar_power_meter_closing_kwh']; } ?>"  >
     </div>
   
 
      <div class="form-group">
       <label for="input1">Solar Power Meter Difference (KWH) *</label>
-      <input type="text" readonly required class="form-control" id="solar_power_meter_difference_kwh" name="solar_power_meter_difference_kwh">
+      <input type="text" readonly required class="form-control" id="solar_power_meter_difference_kwh" name="solar_power_meter_difference_kwh"   value="<?php if(isset($row['solar_power_meter_difference_kwh']) && $row['solar_power_meter_difference_kwh'] != '' ) { echo $row['solar_power_meter_difference_kwh']; } ?>" >
     </div>
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+else { ?>
+       <div class="form-group"  >
 
+             <label for="lng_storage_tank_file" class="form-label"
+                >Solar Power Meter File</label>
+            <input
+                type="file" required name="solar_power_meter_file"  id="solar_power_meter_file" class="form-control" />
 
+            </div>
+
+            <?php } ?>
 
 
   <div class="form-group">
       <label for="input2">Grid Power Meter Opening (KWH)*</label>
-      <input type="text" required onchange="grid_power_meter_difference();" class="form-control" id="grid_power_opening_kwh" name="grid_power_opening_kwh">
+      <input type="text" required onchange="grid_power_meter_difference();" class="form-control" id="grid_power_opening_kwh" name="grid_power_opening_kwh"  value="<?php if(isset($row['grid_power_opening_kwh']) && $row['grid_power_opening_kwh'] != '' ) { echo $row['grid_power_opening_kwh']; } elseif(isset($row_prev['grid_power_meter_closing_kwh']) && $row_prev['grid_power_meter_closing_kwh'] != '') { echo $row_prev['grid_power_meter_closing_kwh']; } ?>" >
     </div>
 
     <div class="form-group">
       <label for="input2">Grid Power Meter Closing (KWH)*</label>
-      <input type="text" required onchange="grid_power_meter_difference();" class="form-control" id="grid_power_meter_closing_kwh" name="grid_power_meter_closing_kwh">
+      <input type="text" required onchange="grid_power_meter_difference();" class="form-control" id="grid_power_meter_closing_kwh" name="grid_power_meter_closing_kwh"  value="<?php if(isset($row['grid_power_meter_closing_kwh']) && $row['grid_power_meter_closing_kwh'] != '' ) { echo $row['grid_power_meter_closing_kwh']; } ?>" >
     </div>
 
      <div class="form-group">
       <label for="input1">Grid Power Meter Difference (KWH) *</label>
-      <input type="text" readonly required class="form-control" id="grid_power_meter_difference_kwh"  name="grid_power_meter_difference_kwh">
+      <input type="text" readonly required class="form-control" id="grid_power_meter_difference_kwh"  name="grid_power_meter_difference_kwh"  value="<?php if(isset($row['grid_power_meter_difference_kwh']) && $row['grid_power_meter_difference_kwh'] != '' ) { echo $row['grid_power_meter_difference_kwh']; } ?>">
     </div>
 
-
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+else { ?>
        <div class="form-group"  >
 
              <label for="lng_storage_tank_file" class="form-label"
@@ -721,24 +1255,46 @@ LNG Storage Tank
 
             </div>
 
+             <div class="form-group">
+      <label  for="input1"></label>
+      <div class="col-sm-2">
+      <input type="hidden" name="action" id="action" value="grid_power_meter">
+      <input type="submit" class="form-control  btn btn-primary" id="Submit" name="Submit"></textarea>
+    </div>
+    </div>
+<?php } ?>
+                        </form>
+
   </div>
 </div>
                         </div>
+
+                        <div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'grid_power_meter'  || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+{ echo "show";  }  ?>" id="formSection5">
   <div class="card card-body">
     <!-- Form elements for section 1 go here -->
+
+     <form
+            action=""
+            method="POST"
+            enctype="multipart/form-data" 
+        >
     <div class="form-group">
       <label for="input1">Remark</label>
-      <textarea class="form-control" id="remarks" name="remarks"></textarea>
+      <textarea class="form-control" id="remarks" name="remarks"><?php if(isset($row['remarks']) && $row['remarks'] != ''){ echo $row['remarks']; } ?></textarea>
     </div>
-
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+else { ?>
      <div class="form-group">
       <label  for="input1"></label>
       <div class="col-sm-2">
-      <input type="hidden" name="action" id="action" value="Save">
-      <input type="submit" class="form-control" id="Submit" name="Submit"></textarea>
+      <input type="hidden" name="action" id="action" value="Update">
+      <input type="submit" class="form-control  btn btn-primary" id="Submit" name="Submit"></textarea>
     </div>
     </div>
 
+    <?php } ?>
+                        </div>
                         
                         </div>
                         </div>
@@ -817,6 +1373,14 @@ LNG Storage Tank
        {
            // alert(selectedDate);
             $('#formSection1').collapse('show');
+
+            $("#mis_date_form").submit();
+
+            $("#lng_opening_level_l").val('');
+            $("#lng_opening_level_kg").val('');
+            $("#lng_closing_level_l").val('');
+            $("#lng_closing_level_kg").val('');
+            $('#lng_difference_kg').val('');
        }
 
         // Your logic here
@@ -877,14 +1441,14 @@ function lng_storage_tank_difference_kg()
 
             if(!isValidDecimal(lng_opening_level_kg))
        {
-            alert('Please enter valid decimal value');
+          //  alert('Please enter valid decimal value');
             $('#lng_opening_level_kg').val('');
             return false;
        }
 
        if(!isValidDecimal(lng_closing_level_kg))
        {
-            alert('Please enter valid decimal value');
+         //   alert('Please enter valid decimal value');
             $('#lng_closing_level_kg').val('');
             return false;
        }
@@ -904,9 +1468,9 @@ function lng_storage_tank_difference_kg()
             return false;
        }
 
-                 $('#formSection1').collapse('hide');
+                // $('#formSection1').collapse('hide');
 
-                  $('#formSection2').collapse('show');
+                //  $('#formSection2').collapse('show');
         }
     }
 
@@ -927,14 +1491,14 @@ function lng_storage_tank_difference_kg()
             
             if(!isValidDecimal(lng_totalizer_opening_kg))
        {
-            alert('Please enter valid decimal value');
+           // alert('Please enter valid decimal value');
             $('#lng_totalizer_opening_kg').val('');
             return false;
        }
 
        if(!isValidDecimal(lng_totalizer_closing_kg))
        {
-            alert('Please enter valid decimal value');
+         //   alert('Please enter valid decimal value');
             $('#lng_totalizer_closing_kg').val('');
             return false;
        }
@@ -953,9 +1517,9 @@ function lng_storage_tank_difference_kg()
             return false;
        }
 
-                $('#formSection2').collapse('hide');
+              //  $('#formSection2').collapse('hide');
 
-                  $('#formSection3').collapse('show');
+              //    $('#formSection3').collapse('show');
         }
     }
 
@@ -975,14 +1539,14 @@ function lng_storage_tank_difference_kg()
         {
             if(!isValidDecimal(geg_totalizer_opening_kg))
        {
-            alert('Please enter valid decimal value');
+         //   alert('Please enter valid decimal value');
             $('#geg_totalizer_opening_kg').val('');
             return false;
        }
 
        if(!isValidDecimal(geg_totalizer_closing_kg))
        {
-            alert('Please enter valid decimal value');
+        //    alert('Please enter valid decimal value');
             $('#geg_totalizer_closing_kg').val('');
             return false;
        }
@@ -1002,9 +1566,9 @@ function lng_storage_tank_difference_kg()
             return false;
        }
 
-                $('#formSection3').collapse('hide');
+            //    $('#formSection3').collapse('hide');
 
-                  $('#formSection4').collapse('show');
+             //     $('#formSection4').collapse('show');
 
         }
     }
@@ -1026,14 +1590,14 @@ function lng_storage_tank_difference_kg()
         {
                 if(!isValidDecimal(unloading_mfm_opening_reading_kg))
        {
-            alert('Please enter valid decimal value');
+          //  alert('Please enter valid decimal value');
             $('#unloading_mfm_opening_reading_kg').val('');
             return false;
        }
 
         if(!isValidDecimal(unloading_mfm_closing_reading_kg))
        {
-            alert('Please enter valid decimal value');
+          //  alert('Please enter valid decimal value');
             $('#unloading_mfm_closing_reading_kg').val('');
             return false;
        }
@@ -1052,9 +1616,9 @@ function lng_storage_tank_difference_kg()
             return false;
        }
 
-                $('#formSection4').collapse('hide');
+             //   $('#formSection4').collapse('hide');
 
-                  $('#formSection5').collapse('show');
+             //     $('#formSection5').collapse('show');
         }
     }
 
@@ -1095,14 +1659,14 @@ function lng_storage_tank_difference_kg()
         {
              if(!isValidDecimal(grid_power_opening_kwh))
        {
-            alert('Please enter valid decimal value');
+          //  alert('Please enter valid decimal value');
             $('#grid_power_opening_kwh').val('');
             return false;
        }
 
         if(!isValidDecimal(grid_power_meter_closing_kwh))
        {
-            alert('Please enter valid decimal value');
+          //  alert('Please enter valid decimal value');
             $('#grid_power_meter_closing_kwh').val('');
             return false;
        }
@@ -1121,7 +1685,7 @@ var grid_power_meter_file = document.getElementById("grid_power_meter_file").val
             return false;
        }
 
-                $('#formSection4').collapse('show');
+          /*      $('#formSection4').collapse('show');
 
                   $('#formSection5').collapse('show');
 
@@ -1130,6 +1694,7 @@ var grid_power_meter_file = document.getElementById("grid_power_meter_file").val
                   $('#formSection2').collapse('show');
 
                    $('#formSection1').collapse('show');
+                   */
 
         }
     }
@@ -1166,7 +1731,7 @@ var grid_power_meter_file = document.getElementById("grid_power_meter_file").val
 
                 document.getElementById('solar_power_meter_difference_kwh').value = solar_power_meter_difference_kwh;
 
-                $('#formSection4').collapse('show');
+       /*         $('#formSection4').collapse('show');
 
                   $('#formSection5').collapse('show');
 
@@ -1175,6 +1740,8 @@ var grid_power_meter_file = document.getElementById("grid_power_meter_file").val
                   $('#formSection2').collapse('show');
 
                    $('#formSection1').collapse('show');
+
+                   */
 
         }
     }
@@ -1370,7 +1937,7 @@ $("#solar_power_meter_closing_kwh").change(function(){
 
    }
    else{
-            alert('Please enter valid decimal value');
+          //  alert('Please enter valid decimal value');
 
             $(this).val('');
    }
@@ -1385,7 +1952,7 @@ $("#solar_power_opening_kwh").change(function(){
 
    }
    else{
-            alert('Please enter valid decimal value');
+          //  alert('Please enter valid decimal value');
 
             $(this).val('');
    }
