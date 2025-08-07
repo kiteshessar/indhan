@@ -697,7 +697,7 @@ if(isset($upload_success) && $upload_success != '')
             <input type="hidden" name="action" id="action" value="Save">
 
  <div class="col-sm-2">
-            <button class="form-control">Submit </button>
+            <button class="form-control btn btn-primary">Submit </button>
 </div>
 
 </div>
@@ -998,5 +998,6 @@ $("#totalizer_value_kgs_closing").change(function(){
 </script>
 
 </body>
+
 
 </html>
