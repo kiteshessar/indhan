@@ -1,6 +1,6 @@
 <?php
 session_start();
- // print_r($_SESSION);
+ //print_r($_SESSION);
 
 require_once('./include/database.php');
 
@@ -10,12 +10,24 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'sendotp')
 
     $mobile_number = $_REQUEST['mobile_number'];
 
+     $SelectQuery = "SELECT * FROM operator_masters WHERE mobile = '".$mobile_number."'";
+
+    $result = $mysqli->query($SelectQuery);
+
+    $row = $result->fetch_assoc();
+
+    if(isset($row['mobile']) && $row['mobile'] == $mobile_number)
+{
     $mobile_otp = array();
 
     $mobile_otp['mobile_number'] = $mobile_number;
     $mobile_otp['mobile_otp'] = $rand;
 
     $_SESSION['mobile_otp'] = $mobile_otp;
+
+    $update_otp = "UPDATE operator_masters SET otp = '".$rand."' WHERE mobile = '".$mobile_number."'";
+
+    $mysqli->query($update_otp);
 
 $curl = curl_init();
 
@@ -48,14 +60,23 @@ curl_setopt_array($curl, array(
 $response = curl_exec($curl);
 
 curl_close($curl);
-echo $response;
-
+// echo $response;
+}
+else
+{
+    $message = "Mobile number does not exists";
+}
 
 
 }
 elseif(isset($_REQUEST['action']) && $_REQUEST['action'] == 'verify_otp')
 {
-    if($_REQUEST['mobile_number'] == $_SESSION['mobile_otp']['mobile_number'] && $_REQUEST['otp'] == $_SESSION['mobile_otp']['mobile_otp'] )
+            $SelectQuery = "SELECT * FROM operator_masters WHERE mobile = '".$_SESSION['mobile_otp']['mobile_number']."'";
+
+       $result = $mysqli->query($SelectQuery);
+
+       $row = $result->fetch_assoc();
+    if($_REQUEST['mobile_number'] == $row['mobile'] && $_REQUEST['otp'] == $row['otp'] )
     {
         // echo "OTP verified";
 
@@ -68,6 +89,16 @@ elseif(isset($_REQUEST['action']) && $_REQUEST['action'] == 'verify_otp')
        if(isset($row) && count($row) > 0)
        {
             $_SESSION['userlogin'] = $row;
+
+            $ro_id = $row['ro_id'];
+
+              $SelectQuery = "SELECT * FROM ro_masters WHERE id = '".$ro_id."'";
+
+       $result = $mysqli->query($SelectQuery);
+
+       $ro_details = $result->fetch_assoc();
+
+       $_SESSION['ro_details'] = $ro_details;
 
             header("Location: mis.php");
        }
@@ -91,7 +122,7 @@ elseif(isset($_REQUEST['action']) && $_REQUEST['action'] == 'verify_otp')
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SB Admin 2 - Login</title>
+    <title>Ultra Gas & Energy - Login</title>
 
     <!-- Custom fonts for this template-->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -111,24 +142,23 @@ elseif(isset($_REQUEST['action']) && $_REQUEST['action'] == 'verify_otp')
         <!-- Outer Row -->
         <div class="row justify-content-center">
 
-            <div class="col-xl-10 col-lg-12 col-md-9">
+            <div class="col-xl-6 col-lg-6 col-md-6">
 
                 <div class="card o-hidden border-0 shadow-lg my-5">
                     <div class="card-body p-0">
                         <!-- Nested Row within Card Body -->
                         <div class="row">
                             <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
-                            <div class="col-lg-6">
-<?php if(isset($message) && $message != '') { ?>
-                           <div class="alert alert-success" role="alert">
-  <?php echo $message; ?>
-</div>
-                                             <?php } ?>
-                             
+                            <div class="col-lg-12">
                                 <div class="p-5">
                                     <div class="text-center">
                                         <h1 class="h4 text-gray-900 mb-4">Welcome Back!</h1>
                                     </div>
+                                    <?php if(isset($message) && $message != '') { ?>
+                                    <div class="text-center">
+                                        <h1 class="h6 text-gray-900 mb-4"><?php echo $message; ?></h1>
+                                    </div>
+                                    <?php } ?>
                                     <form class="user" method="post" action="">
                                         <div class="form-group">
                                             <input type="text" class="form-control form-control-user"
@@ -144,7 +174,7 @@ elseif(isset($_REQUEST['action']) && $_REQUEST['action'] == 'verify_otp')
                                             
                                             <?php } ?>
                                         <input type="hidden" name="action" id="action" value="<?php if(isset($_SESSION['mobile_otp'])) { echo "verify_otp"; } else { echo "sendotp"; } ?>">
-                                        <input type="submit" name="SendOtp" value="<?php if(isset($_SESSION['mobile_otp'])) { echo "verify otp"; } else { echo "send otp"; } ?>" idclass="btn btn-primary btn-user btn-block">
+                                        <input type="submit" name="SendOtp" value="<?php if(isset($_SESSION['mobile_otp'])) { echo "verify otp"; } else { echo "send otp"; } ?>" id="SendOtp" class="btn btn-primary btn-user btn-block">
                                     </form>
                                     <hr>
                                    
@@ -171,6 +201,5 @@ elseif(isset($_REQUEST['action']) && $_REQUEST['action'] == 'verify_otp')
     <script src="js/sb-admin-2.min.js"></script>
 
 </body>
-
 
 </html>
