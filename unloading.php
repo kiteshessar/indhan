@@ -2,7 +2,8 @@
 
 session_start();
 
-
+putenv("TZ=IST");
+date_default_timezone_set("Asia/Kolkata");
 require_once('./include/database.php');
 
 if(isset($_SESSION['userlogin']) && count($_SESSION['userlogin']) > 0)
@@ -32,7 +33,9 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
     total_time_taken = '".$_REQUEST['total_time_taken']."',
     operator_name = '".$_REQUEST['operator_name']."',
     invoice_date = '".$_REQUEST['invoice_date']."',
-    remarks = '".$_REQUEST['remarks']."'
+    remarks = '".$_REQUEST['remarks']."',
+    ro_id = '".$_SESSION['ro_details']['id']."',
+    operter_id = '".$_SESSION['userlogin']['id']."'
     ";
 
     $mysqli->query($InsertQuery);
@@ -93,7 +96,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SB Admin 2 - Tables</title>
+    <title>Greenline Admin</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -118,39 +121,58 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
-                <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-laugh-wink"></i>
-                </div>
-                <div class="sidebar-brand-text mx-3">SB Admin <sup>2</sup></div>
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
+                
+                <div class="sidebar-brand-text mx-3"><img src='./img/logo.png'  height="70" width="160" ></div>
             </a>
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
             <!-- Nav Item - Dashboard -->
+             <!--
             <li class="nav-item">
                 <a class="nav-link" href="index.php">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
 
+-->
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 
           
              <!-- Nav Item - Charts -->
-            <li class="nav-item active">
+         <!--   <li class="nav-item active">
                 <a class="nav-link" href="unloading.php">
                     <i class="fas fa-fw fa-chart-area"></i>
                     <span>Tanker Unloading</span></a>
             </li>
-
+-->
             <!-- Nav Item - Tables -->
-            <li class="nav-item">
+           <!-- <li class="nav-item">
                 <a class="nav-link" href="mis.php">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Mis</span></a>
+            </li>
+
+-->
+
+                     <!-- Nav Item - Pages Collapse Menu -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                    aria-expanded="true" aria-controls="collapseTwo">
+                    <i class="fas fa-fw fa-cog"></i>
+                    <span>Mis</span>
+                </a>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Manage MIS</h6>
+                        <a class="collapse-item" href="mis.php">Mis</a>
+                        <a class="collapse-item" href="unloading.php">Tanker Unloading</a>
+                    </div>
+                </div>
             </li>
 
             <!-- Divider -->
@@ -184,12 +206,8 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                     <form
                         class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
                         <div class="input-group">
-                            <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
-                                aria-label="Search" aria-describedby="basic-addon2">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" type="button">
-                                    <i class="fas fa-search fa-sm"></i>
-                                </button>
+                          <div class="input-group-append">
+                             
                             </div>
                         </div>
                     </form>
@@ -199,143 +217,17 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
 
                         <!-- Nav Item - Search Dropdown (Visible Only XS) -->
                         <li class="nav-item dropdown no-arrow d-sm-none">
-                            <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-search fa-fw"></i>
-                            </a>
-                            <!-- Dropdown - Messages -->
-                            <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
-                                aria-labelledby="searchDropdown">
-                                <form class="form-inline mr-auto w-100 navbar-search">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control bg-light border-0 small"
-                                            placeholder="Search for..." aria-label="Search"
-                                            aria-describedby="basic-addon2">
-                                        <div class="input-group-append">
-                                            <button class="btn btn-primary" type="button">
-                                                <i class="fas fa-search fa-sm"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
+                            
                         </li>
 
                         <!-- Nav Item - Alerts -->
                         <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-bell fa-fw"></i>
-                                <!-- Counter - Alerts -->
-                                <span class="badge badge-danger badge-counter">3+</span>
-                            </a>
-                            <!-- Dropdown - Alerts -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="alertsDropdown">
-                                <h6 class="dropdown-header">
-                                    Alerts Center
-                                </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-primary">
-                                            <i class="fas fa-file-alt text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 12, 2019</div>
-                                        <span class="font-weight-bold">A new monthly report is ready to download!</span>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-success">
-                                            <i class="fas fa-donate text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 7, 2019</div>
-                                        $290.29 has been deposited into your account!
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-warning">
-                                            <i class="fas fa-exclamation-triangle text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 2, 2019</div>
-                                        Spending Alert: We've noticed unusually high spending for your account.
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
-                            </div>
+                          
                         </li>
 
                         <!-- Nav Item - Messages -->
                         <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-envelope fa-fw"></i>
-                                <!-- Counter - Messages -->
-                                <span class="badge badge-danger badge-counter">7</span>
-                            </a>
-                            <!-- Dropdown - Messages -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="messagesDropdown">
-                                <h6 class="dropdown-header">
-                                    Message Center
-                                </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_1.svg"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div class="font-weight-bold">
-                                        <div class="text-truncate">Hi there! I am wondering if you can help me with a
-                                            problem I've been having.</div>
-                                        <div class="small text-gray-500">Emily Fowler · 58m</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_2.svg"
-                                            alt="...">
-                                        <div class="status-indicator"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">I have the photos that you ordered last month, how
-                                            would you like them sent to you?</div>
-                                        <div class="small text-gray-500">Jae Chun · 1d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_3.svg"
-                                            alt="...">
-                                        <div class="status-indicator bg-warning"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Last month's report looks great, I am very happy with
-                                            the progress so far, keep up the good work!</div>
-                                        <div class="small text-gray-500">Morgan Alvarez · 2d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Am I a good boy? The reason I ask is because someone
-                                            told me that people say this to all dogs, even if they aren't good...</div>
-                                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
-                            </div>
+                           
                         </li>
 
                         <div class="topbar-divider d-none d-sm-block"></div>
@@ -351,18 +243,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Profile
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Settings
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Activity Log
-                                </a>
+                              
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="logout.php" >
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
@@ -380,8 +261,8 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">LNG Tanker Unloading Records , <?php echo $_SESSION['userlogin']['name']; ?></h1>
-                    <p class="mb-4">Please provide your address details below. Fields marked
+                    <h1 class="h3 mb-2 text-gray-800">LNG Tanker Unloading Records , <?php echo $_SESSION['ro_details']['name']; ?></h1>
+                    <p class="mb-4"> Fields marked
                     with * are required.</p>
 
                     <!-- DataTales Example -->
@@ -390,10 +271,12 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
             action=""
             method="POST"
             enctype="multipart/form-data"
+
+            onsubmit="return validateStartBeforeEnd();"
         >
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">LNG Tanker Unloading Records , <?php echo $_SESSION['userlogin']['name']; ?></h6>
+                            <!-- <h6 class="m-0 font-weight-bold text-primary">LNG Tanker Unloading Records , <?php echo $_SESSION['userlogin']['name']; ?></h6> -->
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -928,6 +811,31 @@ if (regex.test(plate)) {
         `${diffHours}:${diffMinutes}:00`;
 }
 
+document.addEventListener('DOMContentLoaded', function () {
+    var today = new Date();
+    var yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    function formatDate(date) {
+        var dd = String(date.getDate()).padStart(2, '0');
+        var mm = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-based
+        var yyyy = date.getFullYear();
+        return yyyy + '-' + mm + '-' + dd;
+    }
+
+    var minDate = formatDate(yesterday); // yesterday
+    var maxDate = formatDate(today);     // today
+
+    var dateInput = document.getElementById('unloading_date');
+    dateInput.setAttribute('min', minDate);
+    dateInput.setAttribute('max', maxDate);
+
+    // Set today's date as default
+    dateInput.value = maxDate;
+});
+
+
+
 
     
         document.addEventListener('DOMContentLoaded', function() {
@@ -936,9 +844,9 @@ if (regex.test(plate)) {
             var mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
             var yyyy = today.getFullYear();
 
-            var minDate = yyyy + '-' + mm + '-' + dd;
+            var maxDate = yyyy + '-' + mm + '-' + dd;
 
-            document.getElementById('unloading_date').setAttribute('min', minDate);
+            document.getElementById('invoice_date').setAttribute('max', maxDate);
         });
 
 function isValidDecimal(input) {
@@ -995,9 +903,157 @@ $("#totalizer_value_kgs_closing").change(function(){
 
 });
 
+
+document.querySelector('input[type=file]').addEventListener('change', function () {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'];
+    const maxSize = 5 * 1024 * 1024; // 5 MB
+
+    for (let i = 0; i < this.files.length; i++) {
+        const file = this.files[i];
+
+        if (!allowedTypes.includes(file.type)) {
+            alert(`❌ "${file.name}" is not a valid file type. Only PDF and images allowed.`);
+            this.value = ''; // Clear selection
+            return;
+        }
+
+        if (file.size > maxSize) {
+            alert(`❌ "${file.name}" exceeds the 5MB size limit.`);
+            this.value = '';
+            return;
+        }
+    }
+
+    // ✅ All files passed validation
+    console.log("✅ All files are valid.");
+});
+
+/*document.addEventListener('DOMContentLoaded', function () {
+    // Get current date & time
+    let now = new Date();
+    
+    // Format as YYYY-MM-DDTHH:MM for datetime-local
+    let year = now.getFullYear();
+    let month = String(now.getMonth() + 1).padStart(2, '0');
+    let day = String(now.getDate()).padStart(2, '0');
+    let hours = String(now.getHours()).padStart(2, '0');
+    let minutes = String(now.getMinutes()).padStart(2, '0');
+
+    // The key change: Use 'T' instead of space
+    let maxDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
+    // Set max attribute
+    document.getElementById("unload_start_time_hrs").setAttribute("max", maxDateTime);
+    document.getElementById("unload_end_time_hrs").setAttribute("max", maxDateTime);
+});
+*/
+/*
+document.addEventListener('DOMContentLoaded', function () {
+    function getCurrentDateTimeString() {
+        let now = new Date();
+        let year = now.getFullYear();
+        let month = String(now.getMonth() + 1).padStart(2, '0');
+        let day = String(now.getDate()).padStart(2, '0');
+        let hours = String(now.getHours()).padStart(2, '0');
+        let minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    let maxDateTime = getCurrentDateTimeString();
+
+    let startInput = document.getElementById("unload_start_time_hrs");
+    let endInput = document.getElementById("unload_end_time_hrs");
+
+    startInput.max = maxDateTime;
+    endInput.max = maxDateTime;
+
+    function preventFutureSelection(input) {
+        if (input.value && input.value > getCurrentDateTimeString()) {
+            input.value = getCurrentDateTimeString();
+        }
+    }
+
+    startInput.addEventListener("input", function () {
+        preventFutureSelection(startInput);
+    });
+
+    endInput.addEventListener("input", function () {
+        preventFutureSelection(endInput);
+    });
+});
+
+*/
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    function getCurrentDateTimeString() {
+        let now = new Date();
+        let year = now.getFullYear();
+        let month = String(now.getMonth() + 1).padStart(2, '0');
+        let day = String(now.getDate()).padStart(2, '0');
+        let hours = String(now.getHours()).padStart(2, '0');
+        let minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    let startInput = document.getElementById("unload_start_time_hrs");
+    let endInput = document.getElementById("unload_end_time_hrs");
+
+    // Set max for both inputs
+    function updateMax() {
+        let maxDateTime = getCurrentDateTimeString();
+        startInput.max = maxDateTime;
+        endInput.max = maxDateTime;
+    }
+    updateMax();
+
+    function preventFutureSelection(input) {
+        if (input.value && input.value > getCurrentDateTimeString()) {
+            input.value = getCurrentDateTimeString();
+        }
+    }
+
+    function validateStartBeforeEnd() {
+        if (startInput.value && endInput.value && startInput.value > endInput.value) {
+            alert("Start date/time must be earlier than End date/time");
+            endInput.value = "";
+        }
+    }
+
+    startInput.addEventListener("input", function () {
+        preventFutureSelection(startInput);
+       // validateStartBeforeEnd();
+    });
+
+    endInput.addEventListener("input", function () {
+        preventFutureSelection(endInput);
+     //   validateStartBeforeEnd();
+    });
+
+    // Optional: keep updating max every minute in case the user stays on the form
+    setInterval(updateMax, 60000);
+});
+
+
+    function validateStartBeforeEnd() {
+
+            let startInput = document.getElementById("unload_start_time_hrs");
+            let endInput = document.getElementById("unload_end_time_hrs");
+
+        if (startInput.value && endInput.value && startInput.value > endInput.value) {
+            alert("Start date/time must be earlier than End date/time");
+            endInput.value = "";
+
+            return false;
+        }
+
+        return true;
+    }
+
+
 </script>
 
 </body>
-
 
 </html>
