@@ -96,7 +96,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Greenline Admin</title>
+    <title>Ugel Admin</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -1083,4 +1083,5 @@ document.addEventListener('DOMContentLoaded', function () {
 </body>
 
 </html>
+
 
