@@ -34,7 +34,7 @@ $SelectQuery = "SELECT * FROM lng_tanker_unloading_records where operter_id = '"
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Greenline Admin</title>
+    <title>Ugel Admin</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
