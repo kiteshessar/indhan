@@ -16,7 +16,7 @@ else
 
 }
 
-$SelectQuery = "SELECT * FROM lng_tanker_unloading_records order by id desc limit 0,10 ";
+$SelectQuery = "SELECT * FROM lng_tanker_unloading_records where operter_id = '".$_SESSION['userlogin']['id']."' order by id desc limit 0,10 ";
 
            $result = $mysqli->query($SelectQuery);
 
@@ -216,7 +216,7 @@ $SelectQuery = "SELECT * FROM lng_tanker_unloading_records order by id desc limi
 <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">DataTables Example</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Unloading list</h6>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
