@@ -4,6 +4,19 @@ session_start();
 putenv("TZ=IST");
 date_default_timezone_set("Asia/Kolkata");
 
+if(isset($_REQUEST['mis_date']) && $_REQUEST['mis_date'] != '')
+{
+$mis_date_raw = $_REQUEST['mis_date'];
+
+//echo $mis_date_raw;
+
+$mis_date_arr = explode("-",$mis_date_raw);
+
+$mis_date_new = $mis_date_arr[2]."-".$mis_date_arr[1]."-".$mis_date_arr[0];
+
+}
+//echo $mis_date_new;
+
 require_once('./include/database.php');
 
 if(isset($_SESSION['userlogin']) && count($_SESSION['userlogin']) > 0)
@@ -17,6 +30,8 @@ else
 
 // print_r($_REQUEST);
 
+//print_r($_SESSION['ro_details']);
+
 $SelectQuery = "SELECT * FROM setings ";
 
            $result = $mysqli->query($SelectQuery);
@@ -29,23 +44,24 @@ $SelectQuery = "SELECT * FROM setings ";
 
         if(isset($_REQUEST['mis_date']) && $_REQUEST['mis_date'] != '')
         {
-            $today = $_REQUEST['mis_date'];
+            $today = $mis_date_new;
 
-            $_SESSION['mis_date'] = $_REQUEST['mis_date'];
+            $_SESSION['mis_date'] = $mis_date_new;
         }
         elseif(isset($_SESSION['mis_date']) && $_SESSION['mis_date'] != '')
         {
-            $today = $_SESSION['mis_date'];
+           // $today = $_SESSION['mis_date'];
         }
         else
         {
 
-            $today = date("Y-m-d");
+           // $today = date("Y-m-d");
         }
 
            
-
-     $SelectQuery = "SELECT * FROM lng_storage_mis where operter_id = '".$_SESSION['userlogin']['id']."' AND DATE(mis_date) = '".$today."'";
+if(isset($today) && $today != '' )
+{
+     $SelectQuery = "SELECT * FROM lng_storage_mis where ro_id = '".$_SESSION['ro_details']['id']."' AND DATE(mis_date) = '".$today."'";
 
            $result = $mysqli->query($SelectQuery);
 
@@ -54,12 +70,12 @@ $SelectQuery = "SELECT * FROM setings ";
        $prev_date = date('Y-m-d', strtotime($today . '-1 day'));
 
 
-     $SelectQuery = "SELECT * FROM lng_storage_mis where operter_id = '".$_SESSION['userlogin']['id']."' AND DATE(mis_date) = '".$prev_date."'";
+     $SelectQuery = "SELECT * FROM lng_storage_mis where ro_id = '".$_SESSION['ro_details']['id']."'  AND DATE(mis_date) = '".$prev_date."'";
 
            $result_prev = $mysqli->query($SelectQuery);
 
        $row_prev = $result_prev->fetch_assoc();
-
+}
      //  print_r($row_prev);
 
 if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_storage_tank')
@@ -67,20 +83,75 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_storage_tank')
 
     if(isset($row) && count($row) > 0)
     {
-        $message = "MIS record already exists for this day. ";
+       // $message = "MIS record already exists for this day. ";
 
-        $_REQUEST['action'] = "";
+       // $_REQUEST['action'] = "";
 
-    }else
-    {
-       $InsertQuery = "INSERT INTO   lng_storage_mis SET
-    mis_date = '".$_SESSION['mis_date']."',
+        $UpdateQuery = "UPDATE lng_storage_mis SET
+    mis_date = '".$mis_date_new."',
     lng_opening_level_l = '".$_REQUEST['lng_opening_level_l']."',
     lng_opening_level_kg = '".$_REQUEST['lng_opening_level_kg']."',
     lng_closing_level_l = '".$_REQUEST['lng_closing_level_l']."',
     lng_closing_level_kg = '".$_REQUEST['lng_closing_level_kg']."',
     lng_difference_kg = '".$_REQUEST['lng_difference_kg']."',
     operter_id = '".$_SESSION['userlogin']['id']."'
+    ,
+    ro_id =' ".$_SESSION['ro_details']['id']."',
+    step = '0'
+    WHERE
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$mis_date_new."'
+    ";
+
+   // $_SESSION['mis_date'] = $_REQUEST['mis_date'];
+
+    $mysqli->query($UpdateQuery);
+
+    $insert_id = $row['id'];
+
+    $imgDir = "./uploads/";
+
+    $i=0;
+
+    $upload_arr = array();
+
+    if($_FILES['lng_storage_tank_file']['name'])
+    {
+            $fileName=$_FILES['lng_storage_tank_file']['name'];
+             $tmpFileName = $_FILES['lng_storage_tank_file']['tmp_name'];
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            $image1 = time().'-'.$i.'.'.$fileExt;
+
+            $upload_arr[] = $image1;
+
+			move_uploaded_file($tmpFileName, $imgDir.$image1);
+
+              $UpdateQuery = "UPDATE lng_storage_mis SET 
+    lng_storage_tank_file='".$image1."'
+
+    WHERE
+    id='".$insert_id."'
+    ";
+
+    $mysqli->query($UpdateQuery);
+
+    }
+
+
+
+    }else
+    {
+       $InsertQuery = "INSERT INTO   lng_storage_mis SET
+    mis_date = '".$mis_date_new."',
+    lng_opening_level_l = '".$_REQUEST['lng_opening_level_l']."',
+    lng_opening_level_kg = '".$_REQUEST['lng_opening_level_kg']."',
+    lng_closing_level_l = '".$_REQUEST['lng_closing_level_l']."',
+    lng_closing_level_kg = '".$_REQUEST['lng_closing_level_kg']."',
+    lng_difference_kg = '".$_REQUEST['lng_difference_kg']."',
+    operter_id = '".$_SESSION['userlogin']['id']."'
+    ,
+    ro_id =' ".$_SESSION['ro_details']['id']."',
+    step = '0'
     ";
 
    // $_SESSION['mis_date'] = $_REQUEST['mis_date'];
@@ -133,9 +204,10 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_dispenser')
     
     lng_totalizer_opening_kg = '".$_REQUEST['lng_totalizer_opening_kg']."',
     lng_totalizer_closing_kg = '".$_REQUEST['lng_totalizer_closing_kg']."',
-    sold_qty_dispenser_kg = '".$_REQUEST['sold_qty_dispenser_kg']."'
+    sold_qty_dispenser_kg = '".$_REQUEST['sold_qty_dispenser_kg']."',
+    step = '0'
     WHERE
-    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$mis_date_new."'
     ";
 
     $mysqli->query($UpdateQuery);
@@ -187,9 +259,10 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'geg')
      geg_totalizer_opening_kg = '".$_REQUEST['geg_totalizer_opening_kg']."',
     geg_totalizer_closing_kg = '".$_REQUEST['geg_totalizer_closing_kg']."',
     geg_consumption_kg = '".$_REQUEST['geg_consumption_kg']."',
-    geg_running_hours = '".$_REQUEST['geg_running_hours']."'
+    geg_running_hours = '".$_REQUEST['geg_running_hours']."',
+    step = '0'
     WHERE
-    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$mis_date_new."'
     ";
 
     $mysqli->query($UpdateQuery);
@@ -243,9 +316,10 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm')
   unloading_mfm_opening_reading_kg = '".$_REQUEST['unloading_mfm_opening_reading_kg']."',
     unloading_mfm_closing_reading_kg = '".$_REQUEST['unloading_mfm_closing_reading_kg']."',
     unloading_mfm_difference_kg = '".$_REQUEST['unloading_mfm_difference_kg']."'
-
+,
+    step = '0'
     WHERE
-    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$mis_date_new."'
     ";
 
     $mysqli->query($UpdateQuery);
@@ -285,7 +359,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm')
 
 }
 
-
+/*
 
 if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm')
 {
@@ -296,7 +370,8 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm')
   unloading_mfm_opening_reading_kg = '".$_REQUEST['unloading_mfm_opening_reading_kg']."',
     unloading_mfm_closing_reading_kg = '".$_REQUEST['unloading_mfm_closing_reading_kg']."',
     unloading_mfm_difference_kg = '".$_REQUEST['unloading_mfm_difference_kg']."'
-
+,
+    step = '5'
     WHERE
     operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
     ";
@@ -337,6 +412,8 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm')
 
 
 }
+
+*/
 
 // grid_power_meter
 
@@ -353,9 +430,12 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'grid_power_meter')
     solar_power_opening_kwh = '".$_REQUEST['solar_power_opening_kwh']."',
     solar_power_meter_closing_kwh = '".$_REQUEST['solar_power_meter_closing_kwh']."',
     solar_power_meter_difference_kwh = '".$_REQUEST['solar_power_meter_difference_kwh']."'
-
+, grid_power_export_opening_kwh = '".$_REQUEST['grid_power_export_opening_kwh']."',
+    grid_power_export_meter_closing_kwh = '".$_REQUEST['grid_power_export_meter_closing_kwh']."',
+    grid_power_export_meter_difference_kwh = '".$_REQUEST['grid_power_export_meter_difference_kwh']."',
+    step = '0'
     WHERE
-    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$mis_date_new."'
     ";
 
     $mysqli->query($UpdateQuery);
@@ -382,6 +462,20 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'grid_power_meter')
 
 			move_uploaded_file($tmpFileName, $imgDir.$image4);
 
+
+               $fileName=$_FILES['grid_power_export_meter_file']['name'];
+             $tmpFileName = $_FILES['grid_power_export_meter_file']['tmp_name'];
+            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+            $image6 = time().'-'.$i.'.'.$fileExt;
+
+            $upload_arr[] = $image6;
+
+            $i++;
+
+			move_uploaded_file($tmpFileName, $imgDir.$image6);
+
+
             $fileName=$_FILES['solar_power_meter_file']['name'];
              $tmpFileName = $_FILES['solar_power_meter_file']['tmp_name'];
             $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
@@ -394,6 +488,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'grid_power_meter')
 
               $UpdateQuery = "UPDATE lng_storage_mis SET 
      grid_power_meter_file='".$image4."',
+     grid_power_export_meter_file='".$image6."',
      solar_power_meter_file='".$image5."'
 
     WHERE
@@ -415,8 +510,10 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Update')
            $UpdateQuery = " UPDATE  lng_storage_mis SET
     is_submitted = '1',
   remarks = '".$_REQUEST['remarks']."'
+  ,
+    step = '0'
     WHERE
-    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$today."'
+    operter_id = '".$_SESSION['userlogin']['id']."' AND mis_date = '".$mis_date_new."'
     ";
 
     $mysqli->query($UpdateQuery);
@@ -427,9 +524,9 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
 {
     //print_r($_REQUEST);
 
-    $today = date("Y-m-d");
+   // $today = date("Y-m-d");
 
-    $SelectQuery = "SELECT * FROM lng_storage_mis where operter_id = '".$_SESSION['userlogin']['id']."' AND DATE(created) = '".$today."'";
+    $SelectQuery = "SELECT * FROM lng_storage_mis where ro_id = '".$_SESSION['ro_details']['id']."' AND DATE(created) = '".$mis_date_new."'";
 
            $result = $mysqli->query($SelectQuery);
 
@@ -573,27 +670,30 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
 
 
 
-    if(isset($_REQUEST['mis_date']) && $_REQUEST['mis_date'] != '')
+    if(isset($mis_date_new) && $mis_date_new != '')
         {
-            $today = $_REQUEST['mis_date'];
+            $today = $mis_date_new;
 
-             $_SESSION['mis_date'] = $_REQUEST['mis_date'];
+             $_SESSION['mis_date'] = $mis_date_new;
         }
         elseif(isset($_SESSION['mis_date']) && $_SESSION['mis_date'] != '')
         {
-            $today = $_SESSION['mis_date'];
+          //  $today = $_SESSION['mis_date'];
         }
         else
         {
 
-            $today = date("Y-m-d");
+           // $today = date("Y-m-d");
         }
 
-      $SelectQuery = "SELECT * FROM lng_storage_mis where operter_id = '".$_SESSION['userlogin']['id']."' AND DATE(mis_date) = '".$today."'";
+        if(isset($today) && $today != '')
+        {
+            $SelectQuery = "SELECT * FROM lng_storage_mis where ro_id = '".$_SESSION['ro_details']['id']."' AND DATE(mis_date) = '".$today."'";
 
            $result = $mysqli->query($SelectQuery);
 
-       $row = $result->fetch_assoc();
+            $row = $result->fetch_assoc();
+        }
 
        //print_r($row);
 
@@ -635,37 +735,55 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
-                <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-laugh-wink"></i>
-                </div>
-                <div class="sidebar-brand-text mx-3">Greenline Admin</div>
+                
+                <div class="sidebar-brand-text mx-3"><img src='./img/logo.png'  height="70" width="160"></div>
             </a>
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
             <!-- Nav Item - Dashboard -->
-            <li class="nav-item">
+           <!-- <li class="nav-item">
                 <a class="nav-link" href="index.php">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
 
-           
+    -->
             
 
             <!-- Nav Item - Charts -->
-            <li class="nav-item">
+         <!--   <li class="nav-item">
                 <a class="nav-link" href="unloading.php">
                     <i class="fas fa-fw fa-chart-area"></i>
                     <span>Tanker Unloading</span></a>
             </li>
 
+    -->
+
             <!-- Nav Item - Tables -->
-            <li class="nav-item active">
+         <!--   <li class="nav-item active">
                 <a class="nav-link" href="mis.php">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Mis</span></a>
+            </li>
+    -->
+
+
+                 <!-- Nav Item - Pages Collapse Menu -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                    aria-expanded="true" aria-controls="collapseTwo">
+                    <i class="fas fa-fw fa-cog"></i>
+                    <span>Mis</span>
+                </a>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Manage MIS</h6>
+                        <a class="collapse-item" href="mis.php">Mis</a>
+                        <a class="collapse-item" href="unloading.php">Tanker Unloading</a>
+                    </div>
+                </div>
             </li>
 
             <!-- Divider -->
@@ -716,147 +834,17 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
 
                         <!-- Nav Item - Search Dropdown (Visible Only XS) -->
                         <li class="nav-item dropdown no-arrow d-sm-none">
-                            <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-search fa-fw"></i>
-                            </a>
-                            <!-- Dropdown - Messages -->
-                            <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
-                                aria-labelledby="searchDropdown">
-                                <form class="form-inline mr-auto w-100 navbar-search">
-                                    <div class="input-group">
-                                        <!-- <input type="text" class="form-control bg-light border-0 small"
-                                            placeholder="Search for..." aria-label="Search"
-                                            aria-describedby="basic-addon2">
--->
-                                        <div class="input-group-append">
-                                           <!-- <button class="btn btn-primary" type="button">
-                                                <i class="fas fa-search fa-sm"></i>
-                                            </button>
--->
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
+                            
                         </li>
 
                         <!-- Nav Item - Alerts -->
                         <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-bell fa-fw"></i>
-                                <!-- Counter - Alerts -->
-                                <span class="badge badge-danger badge-counter">3+</span>
-                            </a>
-                            <!-- Dropdown - Alerts -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="alertsDropdown">
-                                <h6 class="dropdown-header">
-                                    Alerts Center
-                                </h6>
-                               <!-- <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-primary">
-                                            <i class="fas fa-file-alt text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 12, 2019</div>
-                                        <span class="font-weight-bold">A new monthly report is ready to download!</span>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-success">
-                                            <i class="fas fa-donate text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 7, 2019</div>
-                                        $290.29 has been deposited into your account!
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-warning">
-                                            <i class="fas fa-exclamation-triangle text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">December 2, 2019</div>
-                                        Spending Alert: We've noticed unusually high spending for your account.
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
-
--->
-                            </div>
+                           
                         </li>
 
                         <!-- Nav Item - Messages -->
                         <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-envelope fa-fw"></i>
-                                <!-- Counter - Messages -->
-                                <span class="badge badge-danger badge-counter">7</span>
-                            </a>
-                            <!-- Dropdown - Messages -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="messagesDropdown">
-                                <h6 class="dropdown-header">
-                                    Message Center
-                                </h6>
-                              <!--  <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_1.svg"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div class="font-weight-bold">
-                                        <div class="text-truncate">Hi there! I am wondering if you can help me with a
-                                            problem I've been having.</div>
-                                        <div class="small text-gray-500">Emily Fowler · 58m</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_2.svg"
-                                            alt="...">
-                                        <div class="status-indicator"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">I have the photos that you ordered last month, how
-                                            would you like them sent to you?</div>
-                                        <div class="small text-gray-500">Jae Chun · 1d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_3.svg"
-                                            alt="...">
-                                        <div class="status-indicator bg-warning"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Last month's report looks great, I am very happy with
-                                            the progress so far, keep up the good work!</div>
-                                        <div class="small text-gray-500">Morgan Alvarez · 2d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Am I a good boy? The reason I ask is because someone
-                                            told me that people say this to all dogs, even if they aren't good...</div>
-                                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a> -->
-                            </div>
+                           
                         </li>
 
                         <div class="topbar-divider d-none d-sm-block"></div>
@@ -872,19 +860,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                               <!-- <a class="dropdown-item" href="#">
-                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Profile
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Settings
-                                </a>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Activity Log
-                                </a>
--->
+                               
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="logout.php" >
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
@@ -902,27 +878,39 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">MIS - <?php echo $_SESSION['userlogin']['name']; ?></h1>
-                    <p class="mb-4">MIS - <?php echo $_SESSION['userlogin']['name']; ?></p>
+                    <h1 class="h3 mb-2 text-gray-800">MIS - <?php echo $_SESSION['ro_details']['name']; ?></h1>
+                    <p class="mb-4"><!-- MIS - <?php echo $_SESSION['userlogin']['name']; ?> --></p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">MIS - <?php echo $_SESSION['userlogin']['name']; ?></h6>
+                            <h6 class="m-0 font-weight-bold text-primary"><!-- MIS - <?php echo $_SESSION['userlogin']['name']; ?> --></h6>
                         </div>
                         <div class="card-body">
                               <form name="mis_date_form" id="mis_date_form"
             action=""
-            method="POST"
+            method="GET"
             enctype="multipart/form-data" 
         >
                             <div class="table-responsive">
 
-                            <?php if(isset($message) && $message!= '') {
+                            <?php
+                            if(isset($row['ro_id']) && $row['ro_id'] != '' && $row['is_submitted'] == '1')
+                            {
+                                $mis_message="This day entry for MIS is filled you cannot enter again";
+
+                                ?>
+                                 <div class="alert alert-danger" role="alert">
+ <?php echo $mis_message; ?>
+</div>
+                                <?php
+                            }
+                            if(isset($message) && $message!= '') {
                             ?>
-                                <div class="card bg-info text-white">
-    <div class="card-body"><?php echo $message; ?></div>
-  </div>
+                                
+  <div class="alert alert-success" role="alert">
+ <?php echo $message; ?>
+</div>
                             <?php
 
                             }
@@ -933,7 +921,8 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                             <div class="form-group"  >
       <label for="input1">Date*</label>
       <div class="col-sm-4">
-      <input type="date" required class="form-control" id="mis_date" value="<?php if(isset($_SESSION['mis_date']) && $_SESSION['mis_date'] != '') { echo $_SESSION['mis_date']; } ?>" name="mis_date">
+        <input type="hidden" name="action" id="action" value="change_date" >
+      <input type="text"  required class="form-control" id="mis_date" value="" placeholder="dd-mm-yyyy" name="mis_date">
 </div>
     </div>
 </div> </form>
@@ -952,47 +941,57 @@ LNG Storage Tank
 <div class="card bg-info text-white">
     <div class="card-body">LNG Storage Tank</div>
   </div>
-
-<div class="collapse <?php if(isset($_REQUEST['mis_date']) && $_REQUEST['mis_date'] != '' || (isset($row['is_submitted']) && $row['is_submitted'] == '1' ) ) { echo "show"; } ?>" id="formSection1">
+<?php
+// print_r($_REQUEST);
+?>
+<div class="collapse <?php if( (isset($row['is_submitted']) && $row['is_submitted'] == '1' ) || (isset($_REQUEST['action']) && $_REQUEST['action'] == 'change_date') )  { echo "show"; } ?>" id="formSection1">
   <div class="card card-body">
     <!-- Form elements for section 1 go here -->
     <div class="form-group">
-      <label for="input1">LNG Storage Tank Opening Level (L):</label>
-      <input type="text"  required  onchange="lng_litre_to_kg_opening();" value="<?php  if(isset($row['lng_opening_level_l']) && $row['lng_opening_level_l']) {  echo $row['lng_opening_level_l']; }elseif(isset($row_prev['lng_closing_level_l']) && $row_prev['lng_closing_level_l'] != '') { echo $row_prev['lng_closing_level_l']; } ?>" class="form-control" id="lng_opening_level_l" name="lng_opening_level_l">
+      <label for="lng_opening_level_l">LNG Storage Tank Opening Level (L):</label>
+      <input type="text"  required  onchange="lng_litre_to_kg_opening();" value="<?php  if(isset($row['lng_opening_level_l']) && $row['lng_opening_level_l'] != '') {  echo $row['lng_opening_level_l']; }elseif(isset($row_prev['lng_closing_level_l']) && $row_prev['lng_closing_level_l'] != '') { echo $row_prev['lng_closing_level_l']; } ?>" class="form-control" id="lng_opening_level_l" name="lng_opening_level_l">
     </div>
     <div class="form-group">
-      <label for="input2">LNG Storage Tank Opening Level (kg)</label>
-      <input type="text"  readonly class="form-control"  value="<?php  if(isset($row['lng_opening_level_kg']) && $row['lng_opening_level_kg']) {  echo $row['lng_opening_level_kg']; } elseif(isset($row_prev['lng_closing_level_kg']) && $row_prev['lng_closing_level_kg'] != '') { echo $row_prev['lng_closing_level_kg']; } ?>"  id="lng_opening_level_kg"  onchange="lng_storage_tank_difference_kg()" name="lng_opening_level_kg">
+      <label for="lng_opening_level_kg">LNG Storage Tank Opening Level (kg)</label>
+      <input type="text"  readonly class="form-control"  value="<?php  if(isset($row['lng_opening_level_kg']) && $row['lng_opening_level_kg'] != '') {  echo $row['lng_opening_level_kg']; } elseif(isset($row_prev['lng_closing_level_kg']) && $row_prev['lng_closing_level_kg'] != '') { echo $row_prev['lng_closing_level_kg']; } ?>"  id="lng_opening_level_kg"  onchange="lng_storage_tank_difference_kg()" name="lng_opening_level_kg">
     </div>
 
      <div class="form-group">
-      <label for="input1">LNG Storage Tank Closing Level (L):</label>
-      <input type="text" onchange="lng_litre_to_kg_closing();" required class="form-control"  value="<?php  if(isset($row['lng_closing_level_l']) && $row['lng_closing_level_l']) {  echo $row['lng_closing_level_l']; } ?>"  id="lng_closing_level_l" name="lng_closing_level_l">
+      <label for="lng_closing_level_l">LNG Storage Tank Closing Level (L):</label>
+      <input type="text" onchange="lng_litre_to_kg_closing();" required class="form-control"  value="<?php  if(isset($row['lng_closing_level_l']) && $row['lng_closing_level_l']!='') {  echo $row['lng_closing_level_l']; } ?>"  id="lng_closing_level_l" name="lng_closing_level_l">
     </div>
     <div class="form-group">
-      <label for="input2">LNG Storage Tank Closing Level (Kg)*</label>
-      <input type="text"  readonly class="form-control"  value="<?php  if(isset($row['lng_closing_level_kg']) && $row['lng_closing_level_kg']) {  echo $row['lng_closing_level_kg']; } ?>"  id="lng_closing_level_kg"  onchange="lng_storage_tank_difference_kg()" name="lng_closing_level_kg">
+      <label for="lng_closing_level_kg">LNG Storage Tank Closing Level (Kg)*</label>
+      <input type="text"  readonly class="form-control"  value="<?php  if(isset($row['lng_closing_level_kg']) && $row['lng_closing_level_kg'] != '') {  echo $row['lng_closing_level_kg']; } ?>"  id="lng_closing_level_kg"  onchange="lng_storage_tank_difference_kg()" name="lng_closing_level_kg">
     </div>
 
     <div class="form-group">
-      <label for="input2">LNG Storage Tank Difference (kg) *</label>
-      <input type="text" required class="form-control" value="<?php  if(isset($row['lng_difference_kg']) && $row['lng_difference_kg']) {  echo $row['lng_difference_kg']; } ?>" id="lng_difference_kg" readonly name="lng_difference_kg">
+      <label for="lng_difference_kg">LNG Storage Tank Difference (kg) *</label>
+      <input type="text" required class="form-control" value="<?php  if(isset($row['lng_difference_kg']) && $row['lng_difference_kg'] != '') {  echo $row['lng_difference_kg']; } ?>" id="lng_difference_kg" readonly name="lng_difference_kg">
     </div>
-<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+<?php if( (isset($row['is_submitted']) && $row['is_submitted'] == '1') ) {
+?>
+<div class="form-group"  >
+<label for="lng_storage_tank_file" class="form-label"
+                >LNG Storage Tank File</label>
+           
+<a target="_blank" href='<?php echo "./uploads/".$row['lng_storage_tank_file']; ?>' >Open file</a>
+            </div>
+<?php }
 else { ?>
     <div class="form-group"  >
 
              <label for="lng_storage_tank_file" class="form-label"
                 >LNG Storage Tank File</label>
-            <input
-                type="file" required  name="lng_storage_tank_file" id="lng_storage_tank_file"  onchange="lng_storage_tank_difference_kg()" class="form-control" />
-
+                <input
+                type="file" <?php if(isset($row['lng_storage_tank_file']) && $row['lng_storage_tank_file'] != '') { } else { echo "required"; } ?>   name="lng_storage_tank_file" id="lng_storage_tank_file"  onchange="lng_storage_tank_difference_kg()" class="form-control" />
+                <?php if(isset($row['lng_storage_tank_file']) && $row['lng_storage_tank_file'] != '') { ?> <a target="_blank" href='<?php echo "./uploads/".$row['lng_storage_tank_file']; ?>' >Open file</a> <?php }  ?>
             </div>
 
             
 
 <div class="form-group">
-      <label  for="input1"></label>
+      <label  for="Submit"></label>
       <div class="col-sm-2">
       <input type="hidden" name="action" id="action" value="lng_storage_tank">
       <input type="submit" class="form-control btn btn-primary" id="Submit" name="Submit"></textarea>
@@ -1011,7 +1010,7 @@ else { ?>
     <div class="card-body">LNG Dispenser</div>
   </div>
 
-<div class="collapse <?php if((isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_storage_tank') || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+<div class="collapse <?php if((isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_storage_tank') || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) || (isset($row['step']) && $row['step'] == '1' ))
 {  echo "show"; } ?>" id="formSection2">
   <div class="card card-body">
     <!-- Form elements for section 2 go here -->
@@ -1022,27 +1021,38 @@ else { ?>
             enctype="multipart/form-data" 
         >
     <div class="form-group">
-      <label for="input1">LNG Dispenser Totalizer Opening (kg) *</label>
+      <label for="lng_totalizer_opening_kg">LNG Dispenser Totalizer Opening (kg) *</label>
       <input type="text" required onchange="lng_dispenser_sold_quantity_kg();" class="form-control" id="lng_totalizer_opening_kg" name="lng_totalizer_opening_kg" value="<?php if(isset($row['lng_totalizer_opening_kg']) && $row['lng_totalizer_opening_kg'] != '' ) { echo $row['lng_totalizer_opening_kg']; } elseif(isset($row_prev['lng_totalizer_closing_kg']) && $row_prev['lng_totalizer_closing_kg'] != '') { echo $row_prev['lng_totalizer_closing_kg']; } ?>">
     </div>
     <div class="form-group">
-      <label for="input2">LNG Dispenser Totalizer Closing (kg) *</label>
+      <label for="lng_totalizer_closing_kg">LNG Dispenser Totalizer Closing (kg) *</label>
       <input type="text" required onchange="lng_dispenser_sold_quantity_kg();" class="form-control" id="lng_totalizer_closing_kg" name="lng_totalizer_closing_kg" value="<?php if(isset($row['lng_totalizer_closing_kg']) && $row['lng_totalizer_closing_kg'] != '' ) { echo $row['lng_totalizer_closing_kg']; } ?>" >
     </div>
 
      <div class="form-group">
-      <label for="input1">Sold Qty by Dispenser (kg) *:</label>
+      <label for="sold_qty_dispenser_kg">Sold Qty by Dispenser (kg) *:</label>
       <input type="text" required readonly class="form-control" id="sold_qty_dispenser_kg" name="sold_qty_dispenser_kg" value="<?php if(isset($row['sold_qty_dispenser_kg']) && $row['sold_qty_dispenser_kg'] != '' ) { echo $row['sold_qty_dispenser_kg']; } ?>">
     </div>
-<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) {
+    ?>
+   <div class="form-group"  >
+
+             <label for="lng_dispenser_file" class="form-label"
+                >LNG Dispenser File</label>
+           <a target="_blank" href='<?php echo "./uploads/".$row['lng_dispenser_file']; ?>' >Open file</a>
+            </div>
+    <?php
+ }
 else { ?>
        <div class="form-group"  >
 
-             <label for="lng_storage_tank_file" class="form-label"
+             <label for="lng_dispenser_file" class="form-label"
                 >LNG Dispenser File</label>
-            <input
-                type="file" required name="lng_dispenser_file"  onchange="lng_dispenser_sold_quantity_kg();"  id="lng_dispenser_file" class="form-control" />
 
+                           
+            <input
+                type="file"  <?php if(isset($row['lng_dispenser_file']) && $row['lng_dispenser_file'] != '') { } else { echo "required"; } ?>   name="lng_dispenser_file"   id="lng_dispenser_file" class="form-control" />
+                <?php if(isset($row['lng_dispenser_file']) && $row['lng_dispenser_file'] != '') { ?> <a target="_blank" href='<?php echo "./uploads/".$row['lng_dispenser_file']; ?>' >Open file</a> <?php }  ?>
             </div>
 
              <div class="form-group">
@@ -1067,7 +1077,7 @@ else { ?>
     <div class="card-body">GEG</div>
   </div>
 
-<div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_dispenser' || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+<div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'lng_dispenser' || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) || (isset($row['step']) && $row['step'] == '2' ) )
 { echo "show"; } ?>" id="formSection3">
   <div class="card card-body">
     <!-- Form elements for section 2 go here -->
@@ -1078,39 +1088,48 @@ else { ?>
             enctype="multipart/form-data" 
         >
     <div class="form-group">
-      <label for="input1">GEG Totalizer Opening (kg)*</label>
+      <label for="geg_totalizer_opening_kg">GEG Totalizer Opening (kg)*</label>
       <input type="text" required onchange="lng_geg_consumption_kg();" class="form-control" id="geg_totalizer_opening_kg" name="geg_totalizer_opening_kg"   value="<?php if(isset($row['geg_totalizer_opening_kg']) && $row['geg_totalizer_opening_kg'] != '' ) { echo $row['geg_totalizer_opening_kg']; } elseif(isset($row_prev['geg_totalizer_closing_kg']) && $row_prev['geg_totalizer_closing_kg'] != '') { echo $row_prev['geg_totalizer_closing_kg']; } ?>" >
     </div>
     <div class="form-group">
-      <label for="input2">GEG Totalizer Closing (kg)*</label>
+      <label for="geg_totalizer_closing_kg">GEG Totalizer Closing (kg)*</label>
       <input type="text" required  onchange="lng_geg_consumption_kg();"  class="form-control" id="geg_totalizer_closing_kg" name="geg_totalizer_closing_kg"   value="<?php if(isset($row['geg_totalizer_closing_kg']) && $row['geg_totalizer_closing_kg'] != '' ) { echo $row['geg_totalizer_closing_kg']; } ?>" >
     </div>
 
      <div class="form-group">
-      <label for="input1">GEG Consumption (kg)*</label>
+      <label for="geg_consumption_kg">GEG Consumption (kg)*</label>
       <input type="text" required readonly class="form-control" id="geg_consumption_kg" name="geg_consumption_kg"   value="<?php if(isset($row['geg_consumption_kg']) && $row['geg_consumption_kg'] != '' ) { echo $row['geg_consumption_kg']; } ?>" >
     </div>
 
     <div class="form-group">
-      <label for="input1">GEG Running Hours *</label>
+      <label for="geg_running_hours">GEG Running Hours *</label>
       <input type="text"  required class="form-control" id="geg_running_hours" name="geg_running_hours"   value="<?php if(isset($row['geg_running_hours']) && $row['geg_running_hours'] != '' ) { echo $row['geg_running_hours']; } ?>" >
     </div>
-<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { 
+?>
+<div class="form-group"  >
+<label for="lng_storage_tank_file" class="form-label"
+                >GEG File</label>
+           
+<a target="_blank" href='<?php echo "./uploads/".$row['geg_file']; ?>' >Open file</a>
+            </div>
+<?php }
 else { ?>
            <div class="form-group"  >
 
-             <label for="lng_storage_tank_file" class="form-label"
+             <label for="geg_file" class="form-label"
                 >GEG File</label>
             <input
-                type="file" onchange="lng_geg_consumption_kg();" required name="geg_file" id="geg_file" class="form-control" />
-
+                type="file" onchange="lng_geg_consumption_kg();"  <?php if(isset($row['geg_file']) && $row['geg_file'] != '') { } else { echo "required"; } ?>  name="geg_file" id="geg_file" class="form-control" />
+<?php if(isset($row['geg_file']) && $row['geg_file'] != '') { ?> <a target="_blank" href='<?php echo "./uploads/".$row['geg_file']; ?>' >Open file</a> <?php }  ?>
+        
             </div>
 
  <div class="form-group">
-      <label  for="input1"></label>
+      <label  for="Submit3"></label>
       <div class="col-sm-2">
       <input type="hidden" name="action" id="action" value="geg">
-      <input type="submit" class="form-control  btn btn-primary" id="Submit" name="Submit"></textarea>
+      <input type="submit" class="form-control  btn btn-primary" id="Submit3" name="Submit"></textarea>
     </div>
     </div>
     <?php } ?>
@@ -1128,7 +1147,7 @@ else { ?>
   </div>
 
 
-<div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'geg' || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+<div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'geg' || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) || (isset($row['step']) && $row['step'] == '3' ) )
 { ?> show <?php } ?>" id="formSection4">
   <div class="card card-body">
 
@@ -1152,7 +1171,17 @@ else { ?>
       <input type="text" required readonly class="form-control" id="unloading_mfm_difference_kg" name="unloading_mfm_difference_kg"  value="<?php if(isset($row['unloading_mfm_difference_kg']) && $row['unloading_mfm_difference_kg'] != '' ) { echo $row['unloading_mfm_difference_kg']; } ?>">
     </div>
 
-<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) {
+?>
+<div class="form-group"  >
+<label for="lng_storage_tank_file" class="form-label"
+                >Unloading MFM File</label>
+           
+<a target="_blank" href='<?php echo "./uploads/".$row['unloading_mfm_file']; ?>' >Open file</a>
+            </div>
+<?php
+
+ }
 else { ?>
 
     <div class="form-group"  >
@@ -1160,7 +1189,8 @@ else { ?>
              <label for="lng_storage_tank_file" class="form-label"
                 >Unloading MFM File</label>
             <input
-                type="file" onchange="lng_unloading_mfm_difference_kg();" required name="unloading_mfm_file" id="unloading_mfm_file" class="form-control" />
+                type="file" onchange="lng_unloading_mfm_difference_kg();"  <?php if(isset($row['unloading_mfm_file']) && $row['unloading_mfm_file'] != '') { } else { echo "required"; } ?>  name="unloading_mfm_file" id="unloading_mfm_file" class="form-control" />
+<?php if(isset($row['unloading_mfm_file']) && $row['unloading_mfm_file'] != '') { ?> <a target="_blank" href='<?php echo "./uploads/".$row['unloading_mfm_file']; ?>' >Open file</a> <?php }  ?>
 
             </div>
 
@@ -1187,7 +1217,7 @@ else { ?>
   </div>
 
 
-<div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm' || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+<div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'unloading_mfm' || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) || (isset($row['step']) && $row['step'] == '4' ) )
 { echo "show";  }  ?>" id="formSection5">
   <div class="card card-body">
     <!-- Form elements for section 2 go here -->
@@ -1215,19 +1245,72 @@ else { ?>
       <label for="input1">Solar Power Meter Difference (KWH) *</label>
       <input type="text" readonly required class="form-control" id="solar_power_meter_difference_kwh" name="solar_power_meter_difference_kwh"   value="<?php if(isset($row['solar_power_meter_difference_kwh']) && $row['solar_power_meter_difference_kwh'] != '' ) { echo $row['solar_power_meter_difference_kwh']; } ?>" >
     </div>
-<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) {
+
+?>
+       <div class="form-group"  >
+
+             <label for="solar_power_meter_file" class="form-label"
+                >Solar Power Meter File</label>
+        <a target="_blank" href='<?php echo "./uploads/".$row['solar_power_meter_file']; ?>' >Open file</a>
+
+            </div>
+
+            <?php
+
+ }
 else { ?>
        <div class="form-group"  >
 
              <label for="lng_storage_tank_file" class="form-label"
                 >Solar Power Meter File</label>
             <input
-                type="file" required name="solar_power_meter_file"  id="solar_power_meter_file" class="form-control" />
+                type="file"  <?php if(isset($row['solar_power_meter_file']) && $row['solar_power_meter_file'] != '') { } else { echo "required"; } ?>  name="solar_power_meter_file"  id="solar_power_meter_file" class="form-control" />
+<?php if(isset($row['solar_power_meter_file']) && $row['solar_power_meter_file'] != '') { ?> <a target="_blank" href='<?php echo "./uploads/".$row['solar_power_meter_file']; ?>' >Open file</a> <?php }  ?>
+
 
             </div>
 
             <?php } ?>
 
+            <div class="form-group">
+      <label for="input2">Grid Export Opening (kWH)*</label>
+      <input type="text" required onchange="grid_power_export_meter_difference();" class="form-control" id="grid_power_export_opening_kwh" name="grid_power_export_opening_kwh"  value="<?php if(isset($row['grid_power_export_opening_kwh']) && $row['grid_power_export_opening_kwh'] != '' ) { echo $row['grid_power_export_opening_kwh']; } elseif(isset($row_prev['grid_power_export_meter_closing_kwh']) && $row_prev['grid_power_export_meter_closing_kwh'] != '') { echo $row_prev['grid_power_export_meter_closing_kwh']; } ?>" >
+    </div>
+
+    <div class="form-group">
+      <label for="input2">Grid Export Closing (KWH)*</label>
+      <input type="text" required onchange="grid_power_export_meter_difference();" class="form-control" id="grid_power_export_meter_closing_kwh" name="grid_power_export_meter_closing_kwh"  value="<?php if(isset($row['grid_power_export_meter_closing_kwh']) && $row['grid_power_export_meter_closing_kwh'] != '' ) { echo $row['grid_power_export_meter_closing_kwh']; } ?>" >
+    </div>
+
+     <div class="form-group">
+      <label for="input1">Difference (kWH) = Closing - Opening *</label>
+      <input type="text" readonly required class="form-control" id="grid_power_export_meter_difference_kwh"  name="grid_power_export_meter_difference_kwh"  value="<?php if(isset($row['grid_power_export_meter_difference_kwh']) && $row['grid_power_export_meter_difference_kwh'] != '' ) { echo $row['grid_power_export_meter_difference_kwh']; } ?>">
+    </div>
+
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { 
+?>
+<div class="form-group"  >
+<label for="grid_power_export_meter_file" class="form-label"
+                >Grid Power Export  File</label>
+           
+<a target="_blank" href='<?php echo "./uploads/".$row['grid_power_export_meter_file']; ?>' >Open file</a>
+            </div>
+<?php
+
+}
+else { ?>
+       <div class="form-group"  >
+
+             <label for="grid_power_export_meter_file" class="form-label"
+                >Grid Power Export File</label>
+            <input
+                type="file"  <?php if(isset($row['grid_power_export_meter_file']) && $row['grid_power_export_meter_file'] != '') { } else { echo "required"; } ?>  name="grid_power_export_meter_file" onchange="grid_power_export_meter_difference();" id="grid_power_export_meter_file" class="form-control" />
+<?php if(isset($row['grid_power_export_meter_file']) && $row['grid_power_export_meter_file'] != '') { ?> <a target="_blank" href='<?php echo "./uploads/".$row['grid_power_export_meter_file']; ?>' >Open file</a> <?php }  ?>
+
+            </div>
+
+            <?php } ?>
 
   <div class="form-group">
       <label for="input2">Grid Power Meter Opening (KWH)*</label>
@@ -1244,14 +1327,25 @@ else { ?>
       <input type="text" readonly required class="form-control" id="grid_power_meter_difference_kwh"  name="grid_power_meter_difference_kwh"  value="<?php if(isset($row['grid_power_meter_difference_kwh']) && $row['grid_power_meter_difference_kwh'] != '' ) { echo $row['grid_power_meter_difference_kwh']; } ?>">
     </div>
 
-<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) { }
+<?php if( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) {
+?>
+<div class="form-group"  >
+<label for="grid_power_meter_file" class="form-label"
+                >Grid Power Meter File</label>
+           
+<a target="_blank" href='<?php echo "./uploads/".$row['grid_power_meter_file']; ?>' >Open file</a>
+            </div>
+<?php
+
+ }
 else { ?>
        <div class="form-group"  >
 
              <label for="lng_storage_tank_file" class="form-label"
                 >Grid Power Meter File</label>
             <input
-                type="file" required name="grid_power_meter_file" onchange="grid_power_meter_difference();" id="grid_power_meter_file" class="form-control" />
+                type="file"  <?php if(isset($row['grid_power_meter_file']) && $row['grid_power_meter_file'] != '') { } else { echo "required"; } ?>  name="grid_power_meter_file" onchange="grid_power_meter_difference();" id="grid_power_meter_file" class="form-control" />
+<?php if(isset($row['grid_power_meter_file']) && $row['grid_power_meter_file'] != '') { ?> <a target="_blank" href='<?php echo "./uploads/".$row['grid_power_meter_file']; ?>' >Open file</a> <?php }  ?>
 
             </div>
 
@@ -1269,7 +1363,7 @@ else { ?>
 </div>
                         </div>
 
-                        <div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'grid_power_meter'  || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ))
+                        <div class="collapse <?php if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'grid_power_meter'  || ( isset($row['is_submitted']) && $row['is_submitted'] == '1' ) || (isset($row['step']) && $row['step'] == '5' ) )
 { echo "show";  }  ?>" id="formSection5">
   <div class="card card-body">
     <!-- Form elements for section 1 go here -->
@@ -1368,7 +1462,7 @@ else { ?>
             $('#mis_date').on('change', function() {
         var selectedDate = $(this).val(); // get the selected date
        // console.log('Selected Date:', selectedDate);
-
+//alert(selectedDate);
        if(selectedDate != '')
        {
            // alert(selectedDate);
@@ -1463,9 +1557,9 @@ function lng_storage_tank_difference_kg()
 
        if(lng_storage_tank_file == '')
        {
-            alert('Please select file');
+           // alert('Please select file');
 
-            return false;
+           // return false;
        }
 
                 // $('#formSection1').collapse('hide');
@@ -1512,9 +1606,9 @@ function lng_storage_tank_difference_kg()
 
        if(lng_dispenser_file == '')
        {
-            alert('Please select file');
+       //     alert('Please select file');
 
-            return false;
+          //  return false;
        }
 
               //  $('#formSection2').collapse('hide');
@@ -1561,9 +1655,9 @@ function lng_storage_tank_difference_kg()
 
        if(geg_file == '')
        {
-            alert('Please select file');
+         //   alert('Please select file');
 
-            return false;
+         //   return false;
        }
 
             //    $('#formSection3').collapse('hide');
@@ -1611,9 +1705,9 @@ function lng_storage_tank_difference_kg()
 
        if(unloading_mfm_file == '')
        {
-            alert('Please select file');
+           // alert('Please select file');
 
-            return false;
+          //  return false;
        }
 
              //   $('#formSection4').collapse('hide');
@@ -1680,9 +1774,9 @@ var grid_power_meter_file = document.getElementById("grid_power_meter_file").val
 
        if(grid_power_meter_file == '')
        {
-            alert('please select file');
+          //  alert('please select file');
 
-            return false;
+          //  return false;
        }
 
           /*      $('#formSection4').collapse('show');
@@ -1695,6 +1789,52 @@ var grid_power_meter_file = document.getElementById("grid_power_meter_file").val
 
                    $('#formSection1').collapse('show');
                    */
+
+        }
+    }
+
+
+    function grid_power_export_meter_difference()
+    {
+        var grid_power_opening_kwh = document.getElementById('grid_power_export_opening_kwh').value;
+
+         //  alert(grid_power_opening_kwh);
+
+        var grid_power_meter_closing_kwh = document.getElementById('grid_power_export_meter_closing_kwh').value;
+
+      // alert(grid_power_meter_closing_kwh);
+
+        var grid_power_meter_difference_kwh;
+
+        if(grid_power_opening_kwh != '' && grid_power_meter_closing_kwh != '')
+        {
+             if(!isValidDecimal(grid_power_opening_kwh))
+       {
+          //  alert('Please enter valid decimal value');
+            $('#grid_power_export_opening_kwh').val('');
+            return false;
+       }
+
+        if(!isValidDecimal(grid_power_meter_closing_kwh))
+       {
+          //  alert('Please enter valid decimal value');
+            $('#grid_power_export_meter_closing_kwh').val('');
+            return false;
+       }
+
+       
+                grid_power_meter_difference_kwh = grid_power_meter_closing_kwh-grid_power_opening_kwh;
+
+                document.getElementById('grid_power_export_meter_difference_kwh').value = grid_power_meter_difference_kwh;
+
+var grid_power_meter_file = document.getElementById("grid_power_meter_file").value;
+
+       if(grid_power_meter_file == '')
+       {
+         
+       }
+
+         
 
         }
     }
@@ -1746,7 +1886,7 @@ var grid_power_meter_file = document.getElementById("grid_power_meter_file").val
         }
     }
     
-
+/*
     document.addEventListener('DOMContentLoaded', function() {
             var today = new Date();
             var dd = String(today.getDate()).padStart(2, '0');
@@ -1757,6 +1897,95 @@ var grid_power_meter_file = document.getElementById("grid_power_meter_file").val
 
             document.getElementById('mis_date').setAttribute('min', minDate);
         });
+
+        */
+
+     /*   document.addEventListener('DOMContentLoaded', function () {
+    var today = new Date();
+    var yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    // Format date to YYYY-MM-DD
+    function formatDate(date) {
+        var dd = String(date.getDate()).padStart(2, '0');
+        var mm = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-based
+        var yyyy = date.getFullYear();
+        return yyyy + '-' + mm + '-' + dd;
+    }
+
+    var minDate = formatDate(yesterday);
+    var maxDate = formatDate(today);
+
+    var dateInput = document.getElementById('mis_date');
+    dateInput.setAttribute('min', minDate);
+    dateInput.setAttribute('max', maxDate);
+});
+
+*/
+/*
+document.addEventListener('DOMContentLoaded', function () {
+    var today = new Date();
+    var yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    function formatDate(date) {
+        var dd = String(date.getDate()).padStart(2, '0');
+        alert(dd);
+        var mm = String(date.getMonth() + 1).padStart(2, '0');
+        var yyyy = date.getFullYear();
+        return yyyy + '-' + mm + '-' + dd;
+    }
+
+    var minDate = formatDate(yesterday);
+    var maxDate = formatDate(today);
+
+    var dateInput = document.getElementById('mis_date');
+    dateInput.setAttribute('min', minDate);
+    dateInput.setAttribute('max', maxDate);
+
+    // ✅ Set default value to today
+    dateInput.value = '<?php if(isset($_REQUEST['mis_date'])) { echo $_REQUEST['mis_date']; } ?>';
+});
+
+*/
+
+document.addEventListener('DOMContentLoaded', function () { 
+    var today = new Date();
+    var yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    function formatDate(date) {
+        var dd = String(date.getDate()).padStart(2, '0');
+        var mm = String(date.getMonth() + 1).padStart(2, '0');
+        var yyyy = date.getFullYear();
+        return yyyy + '-' + mm + '-' + dd; // required by <input type="date">
+    }
+
+    var minDate = formatDate(yesterday);
+    var maxDate = formatDate(today);
+
+    var dateInput = document.getElementById('mis_date');
+    dateInput.setAttribute('min', minDate);
+    dateInput.setAttribute('max', maxDate);
+
+    // If PHP has a value, set it; otherwise leave empty
+    var phpDate = "<?php if(isset($_REQUEST['mis_date'])) echo $_REQUEST['mis_date']; ?>";
+    if (phpDate) {
+        // Convert from dd-mm-yyyy to yyyy-mm-dd if needed
+
+        
+        var parts = phpDate.split('-');
+        if (parts.length === 3) {
+            
+            dateInput.value = phpDate;
+        }
+        else{
+            dateInput.value = "2025-03-12";
+        }
+    }
+});
+
+
 
 /*
 $('#lng_opening_level_l').on('change', function() {
@@ -1961,7 +2190,138 @@ $("#solar_power_opening_kwh").change(function(){
 });
 
 
+$("#geg_running_hours").change(function(){
+   var geg_running_hours = $(this).val();
+
+   if(isValidDecimal(geg_running_hours))
+   {
+
+   }
+   else{
+          //  alert('Please enter valid decimal value');
+
+            $(this).val('');
+   }
+
+
+});
+
+
+$("#grid_power_export_opening_kwh").change(function(){
+   var geg_running_hours = $(this).val();
+
+   if(isValidDecimal(geg_running_hours))
+   {
+
+   }
+   else{
+            alert('Please enter valid decimal value');
+
+            $(this).val('');
+   }
+
+
+});
+
+
+
+
+$("#grid_power_export_meter_closing_kwh").change(function(){
+   var geg_running_hours = $(this).val();
+
+   if(isValidDecimal(geg_running_hours))
+   {
+
+   }
+   else{
+           alert('Please enter valid decimal value');
+
+            $(this).val('');
+   }
+
+
+});
+
+/*
+
+document.querySelector('input[type=file]').addEventListener('change', function () {
+    const file = this.files[0]; // Declare first
+alert('file')
+   // alert(file ? file.name : 'No file selected');
+
+    if (file) {
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('❌ Please select a PDF or image file.');
+            this.value = '';
+        } else if (file.size > 5 * 1024 * 1024) {
+            alert('❌ File size must be under 5MB.');
+            this.value = '';
+        }
+    }
+});
+*/
+
+document.addEventListener('DOMContentLoaded', function () {
+    const fileInputs = document.querySelectorAll('input[type=file]');
+
+    fileInputs.forEach(function (input) {
+        input.addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (!allowedTypes.includes(file.type)) {
+                alert(`❌ "${file.name}" is not a valid file type. Only PDF and images allowed.`);
+                this.value = '';
+                return;
+            }
+
+            if (file.size > maxSize) {
+                alert(`❌ "${file.name}" exceeds the 5MB size limit.`);
+                this.value = '';
+                return;
+            }
+
+            console.log(`✅ File "${file.name}" is valid.`);
+        });
+    });
+});
+
+
         </script>
+
+      <!-- jQuery + jQuery UI CSS/JS -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+
+<script>
+$(document).ready(function () {
+    // Get today's date and yesterday
+    var today = new Date();
+    var yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    // Attach datepicker
+    $("#mis_date").datepicker({
+        dateFormat: "dd-mm-yy", // show as dd-mm-yyyy
+        minDate: yesterday,     // yesterday
+        maxDate: today,         // today
+        changeMonth: true,
+        changeYear: true
+    });
+
+    // If PHP sent a value, set it
+    var phpDate = "<?php if(isset($_REQUEST['mis_date'])) echo $_REQUEST['mis_date']; ?>";
+    if (phpDate) {
+        $("#mis_date").val(phpDate);
+    }
+});
+</script>
+
 
 </body>
 
