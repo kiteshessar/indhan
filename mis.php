@@ -771,7 +771,7 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
 
 
                  <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item">
+           <!-- <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-cog"></i>
@@ -784,6 +784,31 @@ if(isset($_REQUEST['action']) && $_REQUEST['action'] == 'Save')
                         <a class="collapse-item" href="unloading.php">Tanker Unloading</a>
                     </div>
                 </div>
+            </li>
+			-->
+
+			<!-- Nav Item - Dashboard -->
+            <li class="nav-item active">
+                <a class="nav-link" href="unloading_list.php">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>Unloading List</span></a>
+            </li>
+
+           
+            
+
+            <!-- Nav Item - Charts -->
+            <li class="nav-item">
+                <a class="nav-link" href="unloading.php">
+                    <i class="fas fa-fw fa-chart-area"></i>
+                    <span>Tanker Unloading</span></a>
+            </li>
+
+            <!-- Nav Item - Tables -->
+            <li class="nav-item">
+                <a class="nav-link" href="mis.php">
+                    <i class="fas fa-fw fa-table"></i>
+                    <span>Mis</span></a>
             </li>
 
             <!-- Divider -->
